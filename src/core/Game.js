@@ -21,24 +21,27 @@ export class Game {
   }
 
   update(deltaTime) {
+    const context = {
+      deltaTime,
+      canvas: this.canvas,
+      ctx: this.ctx
+    };
+
     for (const entity of this.entities) {
-      if (entity.hasComponent('movement') && entity.hasComponent('transform')) {
-        const movement = entity.getComponent('movement');
-        const transform = entity.getComponent('transform');
-        movement.update(transform, deltaTime, this.canvas.width, this.canvas.height);
-      }
+      entity.update(context);
     }
   }
 
   render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+    const context = {
+      canvas: this.canvas,
+      ctx: this.ctx
+    };
+
     for (const entity of this.entities) {
-      if (entity.hasComponent('circleRenderer') && entity.hasComponent('transform')) {
-        const renderer = entity.getComponent('circleRenderer');
-        const transform = entity.getComponent('transform');
-        renderer.render(this.ctx, transform);
-      }
+      entity.render(context);
     }
   }
 

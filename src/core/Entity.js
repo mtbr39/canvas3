@@ -4,6 +4,7 @@ export class Entity {
   }
 
   addComponent(name, component) {
+    component.entity = this;
     this.components.set(name, component);
     return this;
   }
@@ -19,5 +20,21 @@ export class Entity {
   removeComponent(name) {
     this.components.delete(name);
     return this;
+  }
+
+  update(context) {
+    for (const component of this.components.values()) {
+      if (component.update) {
+        component.update(context);
+      }
+    }
+  }
+
+  render(context) {
+    for (const component of this.components.values()) {
+      if (component.render) {
+        component.render(context);
+      }
+    }
   }
 }

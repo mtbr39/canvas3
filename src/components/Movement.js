@@ -1,5 +1,6 @@
 export class Movement {
   constructor(speed = 100) {
+    this.entity = null;
     this.speed = speed;
     this.vx = 0;
     this.vy = 0;
@@ -14,7 +15,11 @@ export class Movement {
     this.vy = Math.sin(angle);
   }
 
-  update(transform, deltaTime, canvasWidth, canvasHeight) {
+  update(context) {
+    const { deltaTime, canvas } = context;
+    const transform = this.entity.getComponent('transform');
+    if (!transform) return;
+
     this.directionChangeTimer += deltaTime;
     if (this.directionChangeTimer >= this.directionChangeInterval) {
       this.randomizeDirection();
@@ -25,9 +30,9 @@ export class Movement {
     transform.x += this.vx * this.speed * deltaTime;
     transform.y += this.vy * this.speed * deltaTime;
 
-    if (transform.x < 0) transform.x = canvasWidth;
-    if (transform.x > canvasWidth) transform.x = 0;
-    if (transform.y < 0) transform.y = canvasHeight;
-    if (transform.y > canvasHeight) transform.y = 0;
+    if (transform.x < 0) transform.x = canvas.width;
+    if (transform.x > canvas.width) transform.x = 0;
+    if (transform.y < 0) transform.y = canvas.height;
+    if (transform.y > canvas.height) transform.y = 0;
   }
 }
