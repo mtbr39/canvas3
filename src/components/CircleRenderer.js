@@ -10,10 +10,11 @@ export class CircleRenderer {
     const transform = this.entity.getComponent('transform');
     if (!transform) return;
 
-    game.ctx.beginPath();
-    game.ctx.arc(transform.x, transform.y, this.radius * transform.scale, 0, Math.PI * 2);
-    game.ctx.fillStyle = this.color;
-    game.ctx.fill();
-    game.ctx.closePath();
+    game.graphics.circle(
+      transform.x,
+      transform.y,
+      this.radius * transform.scale,
+      this.color
+    );
   }
 }

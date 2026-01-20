@@ -1,7 +1,10 @@
+import { Graphics } from './Graphics.js';
+
 export class Game {
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
+    this.graphics = new Graphics(this.ctx);
     this.entities = [];
     this.lastTime = 0;
     this.running = false;
