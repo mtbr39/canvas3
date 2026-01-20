@@ -1,6 +1,7 @@
 export class Entity {
   constructor() {
     this.components = new Map();
+    this.game = null;
   }
 
   addComponent(name, component) {
@@ -22,18 +23,18 @@ export class Entity {
     return this;
   }
 
-  update(context) {
+  update() {
     for (const component of this.components.values()) {
       if (component.update) {
-        component.update(context);
+        component.update();
       }
     }
   }
 
-  render(context) {
+  render() {
     for (const component of this.components.values()) {
       if (component.render) {
-        component.render(context);
+        component.render();
       }
     }
   }

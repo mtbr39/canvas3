@@ -5,6 +5,7 @@ export class Game {
     this.entities = [];
     this.lastTime = 0;
     this.running = false;
+    this.deltaTime = 0;
 
     this.resizeCanvas();
     window.addEventListener('resize', () => this.resizeCanvas());
@@ -16,32 +17,24 @@ export class Game {
   }
 
   addEntity(entity) {
+    entity.game = this;
     this.entities.push(entity);
     return this;
   }
 
   update(deltaTime) {
-    const context = {
-      deltaTime,
-      canvas: this.canvas,
-      ctx: this.ctx
-    };
+    this.deltaTime = deltaTime;
 
     for (const entity of this.entities) {
-      entity.update(context);
+      entity.update();
     }
   }
 
   render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    const context = {
-      canvas: this.canvas,
-      ctx: this.ctx
-    };
-
     for (const entity of this.entities) {
-      entity.render(context);
+      entity.render();
     }
   }
 

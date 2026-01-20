@@ -5,15 +5,15 @@ export class CircleRenderer {
     this.color = color;
   }
 
-  render(context) {
-    const { ctx } = context;
+  render() {
+    const game = this.entity.game;
     const transform = this.entity.getComponent('transform');
     if (!transform) return;
 
-    ctx.beginPath();
-    ctx.arc(transform.x, transform.y, this.radius * transform.scale, 0, Math.PI * 2);
-    ctx.fillStyle = this.color;
-    ctx.fill();
-    ctx.closePath();
+    game.ctx.beginPath();
+    game.ctx.arc(transform.x, transform.y, this.radius * transform.scale, 0, Math.PI * 2);
+    game.ctx.fillStyle = this.color;
+    game.ctx.fill();
+    game.ctx.closePath();
   }
 }

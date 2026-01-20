@@ -15,24 +15,24 @@ export class Movement {
     this.vy = Math.sin(angle);
   }
 
-  update(context) {
-    const { deltaTime, canvas } = context;
+  update() {
+    const game = this.entity.game;
     const transform = this.entity.getComponent('transform');
     if (!transform) return;
 
-    this.directionChangeTimer += deltaTime;
+    this.directionChangeTimer += game.deltaTime;
     if (this.directionChangeTimer >= this.directionChangeInterval) {
       this.randomizeDirection();
       this.directionChangeTimer = 0;
       this.directionChangeInterval = 1 + Math.random() * 3;
     }
 
-    transform.x += this.vx * this.speed * deltaTime;
-    transform.y += this.vy * this.speed * deltaTime;
+    transform.x += this.vx * this.speed * game.deltaTime;
+    transform.y += this.vy * this.speed * game.deltaTime;
 
-    if (transform.x < 0) transform.x = canvas.width;
-    if (transform.x > canvas.width) transform.x = 0;
-    if (transform.y < 0) transform.y = canvas.height;
-    if (transform.y > canvas.height) transform.y = 0;
+    if (transform.x < 0) transform.x = game.canvas.width;
+    if (transform.x > game.canvas.width) transform.x = 0;
+    if (transform.y < 0) transform.y = game.canvas.height;
+    if (transform.y > game.canvas.height) transform.y = 0;
   }
 }
