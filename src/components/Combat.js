@@ -1,28 +1,75 @@
 import { createAttackHitbox } from '../entities/AttackHitbox.js';
 
 export class Combat {
-  constructor(role = 'villager', damage = 10, attackRange = 250, cooldown = 1.0) {
+  constructor(shouldSeekCombat = false) {
     this.entity = null;
-    this.role = role;
-    this.damage = damage;
-    this.attackRange = attackRange;
-    this.cooldown = cooldown;
+    this.shouldSeekCombat = shouldSeekCombat;
     this.cooldownTimer = 0;
-    this.hitboxRadius = 30;
-    this.hitboxDistance = 40;
-    this.hitboxDuration = 0.2;
   }
 
-  isAdventurer() {
-    return this.role === 'adventurer';
+  static createAggressive() {
+    return new Combat(true);
+  }
+
+  static createDefensive() {
+    return new Combat(false);
+  }
+
+  getAttackRange() {
+    const equipment = this.entity.getComponent('equipment');
+    if (!equipment) return 100;
+
+    const weapon = equipment.getWeapon();
+    return weapon.attackType === 'ranged' ? 250 : 150;
+  }
+
+  getWeaponRange() {
+    const equipment = this.entity.getComponent('equipment');
+    if (!equipment) return 50;
+
+    const weapon = equipment.getWeapon();
+    if (weapon.attackType === 'melee') {
+      return weapon.hitbox.distance + weapon.hitbox.radius;
+    } else {
+      return weapon.projectile.speed * weapon.projectile.duration;
+    }
   }
 
   canAttack() {
     return this.cooldownTimer <= 0;
   }
 
+  findNearbyEnemy() {
+    if (!this.shouldSeekCombat) return null;
+
+    const transform = this.entity.getComponent('transform');
+    if (!transform) return null;
+
+    const game = this.entity.game;
+    const tag = this.entity.getComponent('tag');
+    const enemyTag = tag?.tag === 'human' ? 'monster' : 'human';
+
+    const nearbyEnemies = game.spatialQuery.findNearbyByTag(
+      game.entities, transform.x, transform.y, this.getAttackRange(), enemyTag
+    );
+
+    for (const result of nearbyEnemies) {
+      const health = result.entity.getComponent('health');
+      if (health && !health.isDead) {
+        return result.entity;
+      }
+    }
+
+    return null;
+  }
+
   attack(targetEntity) {
     if (!this.canAttack()) return false;
+
+    const equipment = this.entity.getComponent('equipment');
+    if (!equipment) return false;
+
+    const weapon = equipment.getWeapon();
 
     const transform = this.entity.getComponent('transform');
     const targetTransform = targetEntity.getComponent('transform');
@@ -37,28 +84,60 @@ export class Combat {
     const dirX = dx / distance;
     const dirY = dy / distance;
 
-    const hitboxX = transform.x + dirX * this.hitboxDistance;
-    const hitboxY = transform.y + dirY * this.hitboxDistance;
+    if (weapon.attackType === 'melee') {
+      this.performMeleeAttack(transform, dirX, dirY, weapon);
+    } else if (weapon.attackType === 'ranged') {
+      this.performRangedAttack(transform, dirX, dirY, weapon);
+    }
+
+    this.cooldownTimer = weapon.cooldown;
+
+    const floatingText = this.entity.getComponent('floatingText');
+    if (floatingText) {
+      floatingText.show(weapon.name);
+    }
+
+    return true;
+  }
+
+  performMeleeAttack(transform, dirX, dirY, weapon) {
+    const hitboxX = transform.x + dirX * weapon.hitbox.distance;
+    const hitboxY = transform.y + dirY * weapon.hitbox.distance;
 
     const game = this.entity.game;
     const hitbox = createAttackHitbox(
       hitboxX,
       hitboxY,
-      this.hitboxRadius,
-      this.damage,
+      weapon.hitbox.radius,
+      weapon.damage,
       this.entity,
-      this.hitboxDuration
+      weapon.hitbox.duration,
+      weapon.visual
     );
     game.addEntity(hitbox);
+  }
 
-    this.cooldownTimer = this.cooldown;
+  performRangedAttack(transform, dirX, dirY, weapon) {
+    const spawnDistance = 30;
+    const startX = transform.x + dirX * spawnDistance;
+    const startY = transform.y + dirY * spawnDistance;
 
-    const floatingText = this.entity.getComponent('floatingText');
-    if (floatingText) {
-      floatingText.show('攻撃');
-    }
-
-    return true;
+    const game = this.entity.game;
+    const hitbox = createAttackHitbox(
+      startX,
+      startY,
+      weapon.projectile.radius,
+      weapon.damage,
+      this.entity,
+      weapon.projectile.duration,
+      weapon.visual,
+      {
+        dirX: dirX,
+        dirY: dirY,
+        speed: weapon.projectile.speed
+      }
+    );
+    game.addEntity(hitbox);
   }
 
   update() {

@@ -2,6 +2,22 @@ import { IdleState } from './IdleState.js';
 import { WanderState } from './WanderState.js';
 import { CombatState } from './CombatState.js';
 
+export function createCombatInterruptCheck() {
+  return (entity, currentState) => {
+    // CombatState中は割り込まない
+    if (currentState?.constructor.name === 'CombatState') return null;
+
+    const combat = entity.getComponent('combat');
+    if (combat) {
+      const enemy = combat.findNearbyEnemy();
+      if (enemy) {
+        return new CombatState();
+      }
+    }
+    return null;
+  };
+}
+
 export class DecisionState {
   enter(entity) {
     // DecisionStateに入ったらすぐに次の状態を決定
@@ -18,17 +34,20 @@ export class DecisionState {
 
     const combat = entity.getComponent('combat');
 
-    // Adventurers check for combat opportunities first
-    if (combat && combat.isAdventurer()) {
+    // Check if this entity seeks combat
+    if (combat && combat.shouldSeekCombat) {
       const transform = entity.getComponent('transform');
       if (transform) {
         const game = entity.game;
-        const nearbyMonsters = game.spatialQuery.findNearbyByTag(
-          game.entities, transform.x, transform.y, combat.attackRange, 'monster'
+        const tag = entity.getComponent('tag');
+        const enemyTag = tag?.tag === 'human' ? 'monster' : 'human';
+
+        const nearbyEnemies = game.spatialQuery.findNearbyByTag(
+          game.entities, transform.x, transform.y, combat.getAttackRange(), enemyTag
         );
 
-        // Check if any nearby monsters are alive
-        for (const result of nearbyMonsters) {
+        // Check if any nearby enemies are alive
+        for (const result of nearbyEnemies) {
           const health = result.entity.getComponent('health');
           if (health && !health.isDead) {
             behavior.changeState(new CombatState());

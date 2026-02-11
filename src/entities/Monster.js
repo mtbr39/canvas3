@@ -3,6 +3,8 @@ import { Transform } from '../components/Transform.js';
 import { Movement } from '../components/Movement.js';
 import { Behavior } from '../components/Behavior.js';
 import { Health } from '../components/Health.js';
+import { Combat } from '../components/Combat.js';
+import { Equipment } from '../components/Equipment.js';
 import { IdleState } from '../states/IdleState.js';
 import { ShapeRenderer } from '../components/ShapeRenderer.js';
 import { Collider } from '../components/Collider.js';
@@ -13,6 +15,9 @@ import { FloatingText } from '../components/FloatingText.js';
 export function createMonster(x, y) {
   const entity = new Entity();
 
+  const attacks = ['claw', 'bite'];
+  const randomAttack = attacks[Math.floor(Math.random() * attacks.length)];
+
   entity
     .addComponent('transform', new Transform(x, y))
     .addComponent('movement', new Movement(120))
@@ -22,7 +27,9 @@ export function createMonster(x, y) {
     .addComponent('shapeRenderer', new ShapeRenderer({ stroke: '#333333', strokeWidth: 1 }))
     .addComponent('tag', new Tag('monster'))
     .addComponent('infoRenderer', new InfoRenderer())
-    .addComponent('floatingText', new FloatingText());
+    .addComponent('floatingText', new FloatingText())
+    .addComponent('equipment', new Equipment(randomAttack))
+    .addComponent('combat', Combat.createAggressive());
 
   return entity;
 }

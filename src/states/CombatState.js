@@ -10,6 +10,7 @@ export class CombatState {
   enter(entity) {
     this.checkTimer = 0;
     this.findTarget(entity);
+    const tag = entity.getComponent('tag');
   }
 
   findTarget(entity) {
@@ -18,12 +19,15 @@ export class CombatState {
     if (!transform || !combat) return;
 
     const game = entity.game;
-    const nearbyMonsters = game.spatialQuery.findNearbyByTag(
-      game.entities, transform.x, transform.y, combat.attackRange, 'monster'
+    const tag = entity.getComponent('tag');
+    const enemyTag = tag?.tag === 'human' ? 'monster' : 'human';
+
+    const nearbyEnemies = game.spatialQuery.findNearbyByTag(
+      game.entities, transform.x, transform.y, combat.getAttackRange(), enemyTag
     );
 
-    // Find first alive monster
-    for (const result of nearbyMonsters) {
+    // Find first alive enemy
+    for (const result of nearbyEnemies) {
       const health = result.entity.getComponent('health');
       if (health && !health.isDead) {
         this.target = result.entity;
@@ -71,24 +75,19 @@ export class CombatState {
 
     // Calculate center-to-center distance
     const centerDistance = game.spatialQuery.getDistance(entity, this.target);
+    const weaponRange = combat.getWeaponRange();
 
-    // Out of range - return to decision
-    if (centerDistance > combat.attackRange) {
-      behavior.changeState(new DecisionState());
-      return;
-    }
-
-    // Calculate collision distance (considering collider sizes)
-    const collisionDistance = game.spatialQuery.getCollisionDistance(entity, this.target);
-
-    // Move to attack range (within collision distance)
-    if (collisionDistance > 0) {
-      movement.moveTo(targetTransform.x, targetTransform.y);
-    } else {
+    // Within weapon range - try to attack
+    if (centerDistance <= weaponRange) {
       movement.stop();
       if (combat.canAttack()) {
         combat.attack(this.target);
+      } else {
+
       }
+    } else {
+      // Move closer to get within weapon range
+      movement.moveTo(targetTransform.x, targetTransform.y);
     }
   }
 
