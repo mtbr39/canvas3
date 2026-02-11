@@ -8,8 +8,8 @@ export class Game {
     this.ctx = canvas.getContext('2d');
     this.camera = new Camera(canvas);
     this.graphics = new Graphics(this.ctx, this.camera);
-    this.spatialQuery = new SpatialQuery();
     this.entities = [];
+    this.spatialQuery = new SpatialQuery(this);
     this.lastTime = 0;
     this.running = false;
     this.deltaTime = 0;

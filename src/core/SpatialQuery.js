@@ -1,4 +1,8 @@
 export class SpatialQuery {
+  constructor(game) {
+    this.game = game;
+  }
+
   getDistance(entity1, entity2) {
     const t1 = entity1.getComponent('transform');
     const t2 = entity2.getComponent('transform');
@@ -108,5 +112,19 @@ export class SpatialQuery {
       const tagComp = entity.getComponent('tag');
       return tagComp && tagComp.tag === tag;
     });
+  }
+
+  findCollidingEntities(sourceEntity, filterFn = null) {
+    const colliding = [];
+    for (const target of this.game.entities) {
+      if (target === sourceEntity) continue;
+      if (filterFn && !filterFn(target)) continue;
+
+      const distance = this.getCollisionDistance(sourceEntity, target);
+      if (distance <= 0) {
+        colliding.push(target);
+      }
+    }
+    return colliding;
   }
 }

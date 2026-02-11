@@ -42,7 +42,7 @@ export class FloatingText {
       this.text,
       {
         fill: `rgba(0, 0, 0, ${alpha})`,
-        fontSize: 16
+        fontSize: 14
       }
     );
   }
