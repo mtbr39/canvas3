@@ -6,7 +6,7 @@ import { Health } from '../components/Health.js';
 import { IdleState } from '../states/IdleState.js';
 import { CircleRenderer } from '../components/CircleRenderer.js';
 import { Tag } from '../components/Tag.js';
-import { TextRenderer } from '../components/TextRenderer.js';
+import { InfoRenderer } from '../components/InfoRenderer.js';
 import { FloatingText } from '../components/FloatingText.js';
 
 export function createMonster(x, y) {
@@ -19,7 +19,7 @@ export function createMonster(x, y) {
     .addComponent('health', new Health(50))
     .addComponent('circleRenderer', new CircleRenderer(15, { stroke: '#333333', strokeWidth: 1 }))
     .addComponent('tag', new Tag('monster'))
-    .addComponent('textRenderer', new TextRenderer())
+    .addComponent('infoRenderer', new InfoRenderer())
     .addComponent('floatingText', new FloatingText());
 
   return entity;

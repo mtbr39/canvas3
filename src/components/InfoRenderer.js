@@ -1,4 +1,4 @@
-export class TextRenderer {
+export class InfoRenderer {
   constructor() {
     this.entity = null;
   }
