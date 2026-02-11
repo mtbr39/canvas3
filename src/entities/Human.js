@@ -4,6 +4,7 @@ import { Movement } from '../components/Movement.js';
 import { Behavior } from '../components/Behavior.js';
 import { IdleState } from '../states/IdleState.js';
 import { CircleRenderer } from '../components/CircleRenderer.js';
+import { Tag } from '../components/Tag.js';
 
 export function createHuman(x, y) {
   const entity = new Entity();
@@ -12,7 +13,8 @@ export function createHuman(x, y) {
     .addComponent('transform', new Transform(x, y))
     .addComponent('movement', new Movement(50))
     .addComponent('behavior', new Behavior(new IdleState()))
-    .addComponent('circleRenderer', new CircleRenderer(25, { stroke: '#333333', strokeWidth: 1 }));
+    .addComponent('circleRenderer', new CircleRenderer(25, { stroke: '#333333', strokeWidth: 1 }))
+    .addComponent('tag', new Tag('human'));
 
   return entity;
 }

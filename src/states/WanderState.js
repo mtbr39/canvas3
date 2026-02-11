@@ -1,4 +1,4 @@
-import { IdleState } from './IdleState.js';
+import { DecisionState } from './DecisionState.js';
 
 export class WanderState {
   enter(entity) {
@@ -16,7 +16,7 @@ export class WanderState {
 
     if (movement.hasArrived()) {
       const behavior = entity.getComponent('behavior');
-      behavior.changeState(new IdleState());
+      behavior.changeState(new DecisionState());
     }
   }
 }

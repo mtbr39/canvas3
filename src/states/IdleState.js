@@ -1,4 +1,4 @@
-import { WanderState } from './WanderState.js';
+import { DecisionState } from './DecisionState.js';
 
 export class IdleState {
   constructor(duration = null) {
@@ -20,7 +20,7 @@ export class IdleState {
     this.timer += game.deltaTime;
     if (this.timer >= this.duration) {
       const behavior = entity.getComponent('behavior');
-      behavior.changeState(new WanderState());
+      behavior.changeState(new DecisionState());
     }
   }
 }
