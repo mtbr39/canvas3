@@ -27,11 +27,18 @@ export class FloatingText {
     if (!transform) return;
 
     const alpha = Math.min(1, this.timer / this.duration);
-    const radius = this.entity.getComponent('circleRenderer')?.radius || 25;
+
+    const collider = this.entity.getComponent('collider');
+    let offsetY = 25;
+    if (collider) {
+      offsetY = collider.shape.type === 'circle'
+        ? collider.shape.radius
+        : collider.shape.height / 2;
+    }
 
     game.graphics.text(
       transform.x,
-      transform.y - radius - 20,
+      transform.y - offsetY - 20,
       this.text,
       {
         fill: `rgba(0, 0, 0, ${alpha})`,
