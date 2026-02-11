@@ -9,6 +9,14 @@ export class Health {
   takeDamage(amount) {
     if (this.isDead) return;
     this.currentHealth -= amount;
+
+    if (this.entity && !this.isDead) {
+      const circleRenderer = this.entity.getComponent('circleRenderer');
+      if (circleRenderer) {
+        circleRenderer.flash();
+      }
+    }
+
     if (this.currentHealth <= 0) {
       this.currentHealth = 0;
       this.isDead = true;

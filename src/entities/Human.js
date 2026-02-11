@@ -7,6 +7,8 @@ import { Combat } from '../components/Combat.js';
 import { IdleState } from '../states/IdleState.js';
 import { CircleRenderer } from '../components/CircleRenderer.js';
 import { Tag } from '../components/Tag.js';
+import { TextRenderer } from '../components/TextRenderer.js';
+import { FloatingText } from '../components/FloatingText.js';
 
 export function createHuman(x, y) {
   const entity = new Entity();
@@ -23,7 +25,9 @@ export function createHuman(x, y) {
       stroke: isAdventurer ? '#ff0000' : '#333333', // Red for adventurers
       strokeWidth: 1
     }))
-    .addComponent('tag', new Tag('human'));
+    .addComponent('tag', new Tag('human'))
+    .addComponent('textRenderer', new TextRenderer())
+    .addComponent('floatingText', new FloatingText());
 
   // Only adventurers get combat component
   if (isAdventurer) {

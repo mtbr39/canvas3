@@ -37,4 +37,34 @@ export class Graphics {
 
     this.ctx.closePath();
   }
+
+  text(x, y, text, options = {}) {
+    const {
+      fill = '#ffffff',
+      stroke,
+      strokeWidth = 2,
+      fontSize = 14,
+      fontFamily = 'Arial',
+      align = 'center',
+      baseline = 'middle'
+    } = options;
+
+    // フォントサイズはズームに関係なく一定
+    const actualFontSize = fontSize / this.camera.zoom;
+    this.ctx.font = `${actualFontSize}px ${fontFamily}`;
+    this.ctx.textAlign = align;
+    this.ctx.textBaseline = baseline;
+
+    const screenX = x * this.scale;
+    const screenY = y * this.scale;
+
+    if (stroke) {
+      this.ctx.strokeStyle = stroke;
+      this.ctx.lineWidth = strokeWidth / this.camera.zoom;
+      this.ctx.strokeText(text, screenX, screenY);
+    }
+
+    this.ctx.fillStyle = fill;
+    this.ctx.fillText(text, screenX, screenY);
+  }
 }

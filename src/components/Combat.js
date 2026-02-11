@@ -22,6 +22,12 @@ export class Combat {
     if (!targetHealth || targetHealth.isDead) return false;
     targetHealth.takeDamage(this.damage);
     this.cooldownTimer = this.cooldown;
+
+    const floatingText = this.entity.getComponent('floatingText');
+    if (floatingText) {
+      floatingText.show('攻撃');
+    }
+
     return true;
   }
 
