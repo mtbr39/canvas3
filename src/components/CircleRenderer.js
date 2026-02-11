@@ -1,8 +1,8 @@
 export class CircleRenderer {
-  constructor(radius = 20, color = '#ffffff') {
+  constructor(radius = 20, options = {}) {
     this.entity = null;
     this.radius = radius;
-    this.color = color;
+    this.options = options;
   }
 
   render() {
@@ -14,7 +14,7 @@ export class CircleRenderer {
       transform.x,
       transform.y,
       this.radius,
-      this.color
+      this.options
     );
   }
 }

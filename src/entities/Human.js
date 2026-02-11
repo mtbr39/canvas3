@@ -12,7 +12,7 @@ export function createHuman(x, y) {
     .addComponent('transform', new Transform(x, y))
     .addComponent('movement', new Movement(50))
     .addComponent('behavior', new Behavior(new IdleState()))
-    .addComponent('circleRenderer', new CircleRenderer(25, '#4a90d9'));
+    .addComponent('circleRenderer', new CircleRenderer(25, { stroke: '#333333', strokeWidth: 1 }));
 
   return entity;
 }
