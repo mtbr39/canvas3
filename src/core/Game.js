@@ -1,10 +1,12 @@
 import { Graphics } from './Graphics.js';
+import { Camera } from './Camera.js';
 
 export class Game {
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
-    this.graphics = new Graphics(this.ctx);
+    this.camera = new Camera(canvas);
+    this.graphics = new Graphics(this.ctx, this.camera);
     this.entities = [];
     this.lastTime = 0;
     this.running = false;
@@ -41,9 +43,13 @@ export class Game {
   render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+    this.camera.apply(this.ctx);
+
     for (const entity of this.entities) {
       entity.render();
     }
+
+    this.camera.restore(this.ctx);
   }
 
   gameLoop(currentTime) {
