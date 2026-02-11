@@ -5,7 +5,8 @@ import { Behavior } from '../components/Behavior.js';
 import { Health } from '../components/Health.js';
 import { Combat } from '../components/Combat.js';
 import { IdleState } from '../states/IdleState.js';
-import { CircleRenderer } from '../components/CircleRenderer.js';
+import { ShapeRenderer } from '../components/ShapeRenderer.js';
+import { Collider } from '../components/Collider.js';
 import { Tag } from '../components/Tag.js';
 import { InfoRenderer } from '../components/InfoRenderer.js';
 import { FloatingText } from '../components/FloatingText.js';
@@ -21,7 +22,8 @@ export function createHuman(x, y) {
     .addComponent('movement', new Movement(50))
     .addComponent('behavior', new Behavior(new IdleState()))
     .addComponent('health', new Health(100))
-    .addComponent('circleRenderer', new CircleRenderer(25, {
+    .addComponent('collider', new Collider({ type: 'circle', radius: 25 }))
+    .addComponent('shapeRenderer', new ShapeRenderer({
       stroke: isAdventurer ? '#ff0000' : '#333333', // Red for adventurers
       strokeWidth: 1
     }))

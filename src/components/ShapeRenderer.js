@@ -1,7 +1,6 @@
-export class CircleRenderer {
-  constructor(radius = 20, options = {}) {
+export class ShapeRenderer {
+  constructor(options = {}) {
     this.entity = null;
-    this.radius = radius;
     this.options = options;
     this.visible = true;
     this.flashTimer = 0;
@@ -32,13 +31,24 @@ export class CircleRenderer {
 
     const game = this.entity.game;
     const transform = this.entity.getComponent('transform');
-    if (!transform) return;
+    const collider = this.entity.getComponent('collider');
+    if (!transform || !collider) return;
 
-    game.graphics.circle(
-      transform.x,
-      transform.y,
-      this.radius,
-      this.options
-    );
+    if (collider.shape.type === 'circle') {
+      game.graphics.circle(
+        transform.x,
+        transform.y,
+        collider.shape.radius,
+        this.options
+      );
+    } else if (collider.shape.type === 'rect') {
+      game.graphics.rect(
+        transform.x,
+        transform.y,
+        collider.shape.width,
+        collider.shape.height,
+        this.options
+      );
+    }
   }
 }

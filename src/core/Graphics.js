@@ -38,6 +38,27 @@ export class Graphics {
     this.ctx.closePath();
   }
 
+  rect(x, y, width, height, options = {}) {
+    const { fill, stroke, strokeWidth = 1, strokeScaleWithZoom = false } = options;
+
+    const screenX = x * this.scale - (width * this.scale) / 2;
+    const screenY = y * this.scale - (height * this.scale) / 2;
+
+    if (fill) {
+      this.ctx.fillStyle = fill;
+      this.ctx.fillRect(screenX, screenY, width * this.scale, height * this.scale);
+    }
+
+    if (stroke) {
+      this.ctx.strokeStyle = stroke;
+      const actualStrokeWidth = strokeScaleWithZoom
+        ? strokeWidth
+        : strokeWidth / this.camera.zoom;
+      this.ctx.lineWidth = actualStrokeWidth;
+      this.ctx.strokeRect(screenX, screenY, width * this.scale, height * this.scale);
+    }
+  }
+
   text(x, y, text, options = {}) {
     const {
       fill = '#ffffff',

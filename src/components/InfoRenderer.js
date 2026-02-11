@@ -10,7 +10,14 @@ export class InfoRenderer {
     if (!transform || !health) return;
 
     const text = `${health.currentHealth}/${health.maxHealth}`;
-    const offsetY = this.entity.getComponent('circleRenderer')?.radius || 25;
+
+    const collider = this.entity.getComponent('collider');
+    let offsetY = 25;
+    if (collider) {
+      offsetY = collider.shape.type === 'circle'
+        ? collider.shape.radius
+        : collider.shape.height / 2;
+    }
 
     game.graphics.text(
       transform.x,
