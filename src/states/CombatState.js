@@ -18,8 +18,8 @@ export class CombatState {
     if (!transform || !combat) return;
 
     const game = entity.game;
-    const nearbyMonsters = game.findNearbyByTag(
-      transform.x, transform.y, combat.attackRange, 'monster'
+    const nearbyMonsters = game.spatialQuery.findNearbyByTag(
+      game.entities, transform.x, transform.y, combat.attackRange, 'monster'
     );
 
     // Find first alive monster
@@ -69,20 +69,20 @@ export class CombatState {
       return;
     }
 
-    // Calculate distance
-    const dx = targetTransform.x - transform.x;
-    const dy = targetTransform.y - transform.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    // Calculate center-to-center distance
+    const centerDistance = game.spatialQuery.getDistance(entity, this.target);
 
     // Out of range - return to decision
-    if (distance > combat.attackRange) {
+    if (centerDistance > combat.attackRange) {
       behavior.changeState(new DecisionState());
       return;
     }
 
-    // Move to attack range
-    const closeRange = 50;
-    if (distance > closeRange) {
+    // Calculate collision distance (considering collider sizes)
+    const collisionDistance = game.spatialQuery.getCollisionDistance(entity, this.target);
+
+    // Move to attack range (within collision distance)
+    if (collisionDistance > 0) {
       movement.moveTo(targetTransform.x, targetTransform.y);
     } else {
       movement.stop();

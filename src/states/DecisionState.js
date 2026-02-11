@@ -23,8 +23,8 @@ export class DecisionState {
       const transform = entity.getComponent('transform');
       if (transform) {
         const game = entity.game;
-        const nearbyMonsters = game.findNearbyByTag(
-          transform.x, transform.y, combat.attackRange, 'monster'
+        const nearbyMonsters = game.spatialQuery.findNearbyByTag(
+          game.entities, transform.x, transform.y, combat.attackRange, 'monster'
         );
 
         // Check if any nearby monsters are alive

@@ -1,5 +1,6 @@
 import { Graphics } from './Graphics.js';
 import { Camera } from './Camera.js';
+import { SpatialQuery } from './SpatialQuery.js';
 
 export class Game {
   constructor(canvas) {
@@ -7,6 +8,7 @@ export class Game {
     this.ctx = canvas.getContext('2d');
     this.camera = new Camera(canvas);
     this.graphics = new Graphics(this.ctx, this.camera);
+    this.spatialQuery = new SpatialQuery();
     this.entities = [];
     this.lastTime = 0;
     this.running = false;
@@ -74,32 +76,6 @@ export class Game {
 
   stop() {
     this.running = false;
-  }
-
-  // Spatial query system
-  findNearbyEntities(centerX, centerY, radius, filterFn = null) {
-    const nearby = [];
-    for (const entity of this.entities) {
-      const transform = entity.getComponent('transform');
-      if (!transform) continue;
-      const dx = transform.x - centerX;
-      const dy = transform.y - centerY;
-      const distSq = dx * dx + dy * dy;
-      if (distSq <= radius * radius) {
-        if (!filterFn || filterFn(entity)) {
-          nearby.push({ entity, distance: Math.sqrt(distSq) });
-        }
-      }
-    }
-    nearby.sort((a, b) => a.distance - b.distance);
-    return nearby;
-  }
-
-  findNearbyByTag(centerX, centerY, radius, tag) {
-    return this.findNearbyEntities(centerX, centerY, radius, (entity) => {
-      const tagComp = entity.getComponent('tag');
-      return tagComp && tagComp.tag === tag;
-    });
   }
 
   // Entity removal system
