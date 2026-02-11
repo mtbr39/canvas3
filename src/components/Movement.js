@@ -2,37 +2,47 @@ export class Movement {
   constructor(speed = 100) {
     this.entity = null;
     this.speed = speed;
-    this.vx = 0;
-    this.vy = 0;
-    this.directionChangeTimer = 0;
-    this.directionChangeInterval = 2;
-    this.randomizeDirection();
+    this.targetX = null;
+    this.targetY = null;
+    this.moving = false;
   }
 
-  randomizeDirection() {
-    const angle = Math.random() * Math.PI * 2;
-    this.vx = Math.cos(angle);
-    this.vy = Math.sin(angle);
+  moveTo(x, y) {
+    this.targetX = x;
+    this.targetY = y;
+    this.moving = true;
+  }
+
+  stop() {
+    this.targetX = null;
+    this.targetY = null;
+    this.moving = false;
+  }
+
+  hasArrived() {
+    return !this.moving;
   }
 
   update() {
+    if (!this.moving) return;
+
     const game = this.entity.game;
     const transform = this.entity.getComponent('transform');
     if (!transform) return;
 
-    this.directionChangeTimer += game.deltaTime;
-    if (this.directionChangeTimer >= this.directionChangeInterval) {
-      this.randomizeDirection();
-      this.directionChangeTimer = 0;
-      this.directionChangeInterval = 1 + Math.random() * 3;
+    const dx = this.targetX - transform.x;
+    const dy = this.targetY - transform.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const step = this.speed * game.deltaTime;
+
+    if (dist <= step) {
+      transform.x = this.targetX;
+      transform.y = this.targetY;
+      this.stop();
+      return;
     }
 
-    transform.x += this.vx * this.speed * game.deltaTime;
-    transform.y += this.vy * this.speed * game.deltaTime;
-
-    if (transform.x < 0) transform.x = 1920;
-    if (transform.x > 1920) transform.x = 0;
-    if (transform.y < 0) transform.y = 1080;
-    if (transform.y > 1080) transform.y = 0;
+    transform.x += (dx / dist) * step;
+    transform.y += (dy / dist) * step;
   }
 }
