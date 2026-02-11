@@ -8,14 +8,14 @@ const game = new Game(canvas);
 console.log('v121');
 
 for (let i = 0; i < 10; i++) {
-  const x = Math.random() * window.innerWidth;
-  const y = Math.random() * window.innerHeight;
+  const x = Math.random() * 1920;
+  const y = Math.random() * 1080;
   game.addEntity(createHuman(x, y));
 }
 
 for (let i = 0; i < 10; i++) {
-  const x = Math.random() * window.innerWidth;
-  const y = Math.random() * window.innerHeight;
+  const x = Math.random() * 1920;
+  const y = Math.random() * 1080;
   game.addEntity(createAnimal(x, y));
 }
 

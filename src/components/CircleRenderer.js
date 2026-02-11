@@ -13,7 +13,7 @@ export class CircleRenderer {
     game.graphics.circle(
       transform.x,
       transform.y,
-      this.radius * transform.scale,
+      this.radius,
       this.color
     );
   }

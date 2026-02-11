@@ -30,9 +30,9 @@ export class Movement {
     transform.x += this.vx * this.speed * game.deltaTime;
     transform.y += this.vy * this.speed * game.deltaTime;
 
-    if (transform.x < 0) transform.x = game.canvas.width;
-    if (transform.x > game.canvas.width) transform.x = 0;
-    if (transform.y < 0) transform.y = game.canvas.height;
-    if (transform.y > game.canvas.height) transform.y = 0;
+    if (transform.x < 0) transform.x = 1920;
+    if (transform.x > 1920) transform.x = 0;
+    if (transform.y < 0) transform.y = 1080;
+    if (transform.y > 1080) transform.y = 0;
   }
 }
