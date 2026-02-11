@@ -1,5 +1,6 @@
 import { IdleState } from './IdleState.js';
 import { WanderState } from './WanderState.js';
+import { CombatState } from './CombatState.js';
 
 export class DecisionState {
   enter(entity) {
@@ -15,7 +16,29 @@ export class DecisionState {
     const behavior = entity.getComponent('behavior');
     if (!behavior) return;
 
-    // ランダムに次の状態を選択
+    const combat = entity.getComponent('combat');
+
+    // Adventurers check for combat opportunities first
+    if (combat && combat.isAdventurer()) {
+      const transform = entity.getComponent('transform');
+      if (transform) {
+        const game = entity.game;
+        const nearbyMonsters = game.findNearbyByTag(
+          transform.x, transform.y, combat.attackRange, 'monster'
+        );
+
+        // Check if any nearby monsters are alive
+        for (const result of nearbyMonsters) {
+          const health = result.entity.getComponent('health');
+          if (health && !health.isDead) {
+            behavior.changeState(new CombatState());
+            return;
+          }
+        }
+      }
+    }
+
+    // Default: Idle or Wander
     const rand = Math.random();
 
     if (rand < 0.5) {

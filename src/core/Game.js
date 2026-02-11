@@ -38,6 +38,8 @@ export class Game {
     for (const entity of this.entities) {
       entity.update();
     }
+
+    this.removeMarkedEntities();
   }
 
   render() {
@@ -72,5 +74,48 @@ export class Game {
 
   stop() {
     this.running = false;
+  }
+
+  // Spatial query system
+  findNearbyEntities(centerX, centerY, radius, filterFn = null) {
+    const nearby = [];
+    for (const entity of this.entities) {
+      const transform = entity.getComponent('transform');
+      if (!transform) continue;
+      const dx = transform.x - centerX;
+      const dy = transform.y - centerY;
+      const distSq = dx * dx + dy * dy;
+      if (distSq <= radius * radius) {
+        if (!filterFn || filterFn(entity)) {
+          nearby.push({ entity, distance: Math.sqrt(distSq) });
+        }
+      }
+    }
+    nearby.sort((a, b) => a.distance - b.distance);
+    return nearby;
+  }
+
+  findNearbyByTag(centerX, centerY, radius, tag) {
+    return this.findNearbyEntities(centerX, centerY, radius, (entity) => {
+      const tagComp = entity.getComponent('tag');
+      return tagComp && tagComp.tag === tag;
+    });
+  }
+
+  // Entity removal system
+  markEntityForRemoval(entity) {
+    if (!this.entitiesToRemove) this.entitiesToRemove = [];
+    if (!this.entitiesToRemove.includes(entity)) {
+      this.entitiesToRemove.push(entity);
+    }
+  }
+
+  removeMarkedEntities() {
+    if (!this.entitiesToRemove || this.entitiesToRemove.length === 0) return;
+    for (const entity of this.entitiesToRemove) {
+      const index = this.entities.indexOf(entity);
+      if (index !== -1) this.entities.splice(index, 1);
+    }
+    this.entitiesToRemove = [];
   }
 }
