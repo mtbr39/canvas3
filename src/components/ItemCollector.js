@@ -6,8 +6,8 @@ class ItemCollector {
   }
 
   tryPickup(itemEntity) {
-    const itemState = itemEntity.getComponent('itemState');
-    if (!itemState || !itemState.canPickup()) return false;
+    const itemInfo = itemEntity.getComponent('itemInfo');
+    if (!itemInfo || !itemInfo.canPickup()) return false;
 
     const inventory = this.entity.getComponent('inventory');
     if (!inventory || inventory.isFull()) return false;
@@ -41,8 +41,8 @@ class ItemCollector {
     for (const entity of nearbyEntities) {
       if (entity === this.entity) continue;
 
-      const itemState = entity.getComponent('itemState');
-      if (itemState && itemState.canPickup()) {
+      const itemInfo = entity.getComponent('itemInfo');
+      if (itemInfo && itemInfo.canPickup()) {
         if (this.tryPickup(entity)) {
           break;
         }

@@ -1,5 +1,6 @@
-class ItemState {
-  constructor() {
+class ItemInfo {
+  constructor(itemType) {
+    this.itemType = itemType;
     this.state = 'dropped';
     this.owner = null;
     this.price = 0;
@@ -29,4 +30,4 @@ class ItemState {
   }
 }
 
-export default ItemState;
+export default ItemInfo;

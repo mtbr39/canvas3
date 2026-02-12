@@ -65,13 +65,16 @@ export class Graphics {
       stroke,
       strokeWidth = 2,
       fontSize = 14,
+      fontSizeScaleWithZoom = false,
       fontFamily = 'Arial',
       align = 'center',
       baseline = 'middle'
     } = options;
 
-    // フォントサイズはズームに関係なく一定
-    const actualFontSize = fontSize / this.camera.zoom;
+    // デフォルトではズームに関わらず一定のサイズ、fontSizeScaleWithZoom=trueでズームに連動
+    const actualFontSize = fontSizeScaleWithZoom
+      ? fontSize
+      : fontSize / this.camera.zoom;
     this.ctx.font = `${actualFontSize}px ${fontFamily}`;
     this.ctx.textAlign = align;
     this.ctx.textBaseline = baseline;
