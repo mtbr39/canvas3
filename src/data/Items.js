@@ -1,4 +1,4 @@
-const gray = 'rgba(150, 150, 150, 0.5)';
+import { colors } from './Colors.js';
 
 export const ITEMS = {
   // === 人間用武器 ===
@@ -13,14 +13,9 @@ export const ITEMS = {
       distance: 45,
       duration: 0.2
     },
-    visual: {
-      fill: 'rgba(200, 200, 255, 0.3)',
-      stroke: '#4444ff',
-      strokeWidth: 2
-    },
     dropVisual: {
       shape: 'rect',
-      fill: '#ffdd44'
+      fill: colors.yellow01
     }
   },
 
@@ -35,14 +30,9 @@ export const ITEMS = {
       distance: 50,
       duration: 0.3
     },
-    visual: {
-      fill: 'rgba(255, 100, 100, 0.3)',
-      stroke: '#ff4444',
-      strokeWidth: 2
-    },
     dropVisual: {
       shape: 'rect',
-      fill: '#ffaa44'
+      fill: colors.orange01
     }
   },
 
@@ -57,14 +47,9 @@ export const ITEMS = {
       speed: 400,
       duration: 2.0
     },
-    visual: {
-      fill: gray,
-      // stroke: '#44ff44',
-      // strokeWidth: 2
-    },
     dropVisual: {
       shape: 'rect',
-      fill: '#88dd88'
+      fill: colors.green01
     }
   },
 
@@ -79,14 +64,9 @@ export const ITEMS = {
       speed: 300,
       duration: 3.0
     },
-    visual: {
-      fill: 'rgba(255, 100, 255, 0.5)',
-      // stroke: '#ff44ff',
-      // strokeWidth: 2
-    },
     dropVisual: {
       shape: 'rect',
-      fill: '#dddddd'
+      fill: colors.gray03
     }
   },
 
@@ -102,14 +82,9 @@ export const ITEMS = {
       distance: 30,
       duration: 0.15
     },
-    visual: {
-      fill: 'rgba(255, 0, 0, 0.2)',
-      stroke: '#ff0000',
-      strokeWidth: 1
-    },
     dropVisual: {
       shape: 'rect',
-      fill: '#66bb66'
+      fill: colors.green02
     }
   },
 
@@ -124,14 +99,9 @@ export const ITEMS = {
       distance: 25,
       duration: 0.2
     },
-    visual: {
-      fill: 'rgba(255, 50, 50, 0.3)',
-      stroke: '#ff3333',
-      strokeWidth: 1
-    },
     dropVisual: {
       shape: 'rect',
-      fill: '#999999'
+      fill: colors.gray06
     }
   }
 };
@@ -146,10 +116,5 @@ export const DEFAULT_ITEM = {
     radius: 20,
     distance: 30,
     duration: 0.15
-  },
-  visual: {
-    fill: 'rgba(200, 200, 200, 0.2)',
-    stroke: '#888888',
-    strokeWidth: 1
   }
 };

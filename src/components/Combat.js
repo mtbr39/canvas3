@@ -111,8 +111,7 @@ export class Combat {
       weapon.hitbox.radius,
       weapon.damage,
       this.entity,
-      weapon.hitbox.duration,
-      weapon.visual
+      weapon.hitbox.duration
     );
     game.addEntity(hitbox);
   }
@@ -130,7 +129,6 @@ export class Combat {
       weapon.damage,
       this.entity,
       weapon.projectile.duration,
-      weapon.visual,
       {
         dirX: dirX,
         dirY: dirY,

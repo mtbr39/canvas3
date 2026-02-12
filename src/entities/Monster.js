@@ -11,6 +11,7 @@ import { Collider } from '../components/Collider.js';
 import { Tag } from '../components/Tag.js';
 import { InfoRenderer } from '../components/InfoRenderer.js';
 import { FloatingText } from '../components/FloatingText.js';
+import { colors } from '../data/Colors.js';
 
 export function createMonster(x, y) {
   const entity = new Entity();
@@ -24,7 +25,7 @@ export function createMonster(x, y) {
     .addComponent('behavior', new Behavior(new IdleState()))
     .addComponent('health', new Health(50))
     .addComponent('collider', new Collider({ type: 'circle', radius: 15 }))
-    .addComponent('shapeRenderer', new ShapeRenderer({ stroke: '#333333', strokeWidth: 1 }))
+    .addComponent('shapeRenderer', new ShapeRenderer({ stroke: colors.gray02, strokeWidth: 1 }))
     .addComponent('tag', new Tag('monster'))
     .addComponent('infoRenderer', new InfoRenderer())
     .addComponent('floatingText', new FloatingText())

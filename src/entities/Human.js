@@ -14,6 +14,7 @@ import { FloatingText } from '../components/FloatingText.js';
 import { createCombatInterruptCheck } from '../states/DecisionState.js';
 import Inventory from '../components/Inventory.js';
 import ItemCollector from '../components/ItemCollector.js';
+import { colors } from '../data/Colors.js';
 
 export function createHuman(x, y) {
   const entity = new Entity();
@@ -28,7 +29,7 @@ export function createHuman(x, y) {
     .addComponent('health', new Health(100))
     .addComponent('collider', new Collider({ type: 'circle', radius: 25 }))
     .addComponent('shapeRenderer', new ShapeRenderer({
-      stroke: isAdventurer ? '#ff0000' : '#333333', // Red for adventurers
+      stroke: isAdventurer ? colors.red01 : colors.gray02,
       strokeWidth: 1
     }))
     .addComponent('tag', new Tag('human'))
