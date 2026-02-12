@@ -41,38 +41,44 @@ class CircleRenderer {
 
 ### 2. 設定の内部化
 - コンポーネントの設定やデフォルト値は内部に持つ
-- コンストラクタの引数は最小限にする
+- コンストラクタの引数は最小限にする（できれば引数なしにする）
 - 外部から大量のオプションを渡さない
+- 設定値（capacity, range, durationなど）はコンストラクタで受け取らず、クラス内で定義する
 
 **良い例:**
 ```javascript
-class TextRenderer {
+class Inventory {
+  constructor() {
+    this.items = [];
+    this.capacity = 20;  // 設定値は内部で定義
+  }
+}
+
+class ItemCollector {
   constructor() {
     this.entity = null;
-  }
-
-  render() {
-    // 設定は内部で管理
-    const text = `${health.currentHealth}/${health.maxHealth}`;
-    game.graphics.text(x, y, text, {
-      fill: '#000000',
-      fontSize: 12
-    });
+    this.pickupRange = 30;  // 設定値は内部で定義
+    this.autoPickup = false;
   }
 }
 
 // 使用時
-entity.addComponent('textRenderer', new TextRenderer());
+entity.addComponent('inventory', new Inventory());
+entity.addComponent('itemCollector', new ItemCollector());
 ```
 
 **悪い例:**
 ```javascript
-// 使用時に大量の引数を渡す
-entity.addComponent('textRenderer', new TextRenderer(
-  (entity) => { /* ... */ },
-  0, 35,
-  { fill: '#00ff00', stroke: '#000000', strokeWidth: 3, fontSize: 12 }
-));
+class Inventory {
+  constructor(capacity = 20) {  // 引数で設定値を受け取っている
+    this.items = [];
+    this.capacity = capacity;
+  }
+}
+
+// 使用時に引数を渡す必要がある
+entity.addComponent('inventory', new Inventory(20));
+entity.addComponent('itemCollector', new ItemCollector(30));
 ```
 
 ### 3. メソッドベースの制御

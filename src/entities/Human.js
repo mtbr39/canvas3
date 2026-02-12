@@ -12,6 +12,8 @@ import { Tag } from '../components/Tag.js';
 import { InfoRenderer } from '../components/InfoRenderer.js';
 import { FloatingText } from '../components/FloatingText.js';
 import { createCombatInterruptCheck } from '../states/DecisionState.js';
+import Inventory from '../components/Inventory.js';
+import ItemCollector from '../components/ItemCollector.js';
 
 export function createHuman(x, y) {
   const entity = new Entity();
@@ -31,7 +33,9 @@ export function createHuman(x, y) {
     }))
     .addComponent('tag', new Tag('human'))
     .addComponent('infoRenderer', new InfoRenderer())
-    .addComponent('floatingText', new FloatingText());
+    .addComponent('floatingText', new FloatingText())
+    .addComponent('inventory', new Inventory())
+    .addComponent('itemCollector', new ItemCollector());
 
   // Only adventurers get combat component
   if (isAdventurer) {

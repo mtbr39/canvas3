@@ -17,6 +17,10 @@ export const ITEMS = {
       fill: 'rgba(200, 200, 255, 0.3)',
       stroke: '#4444ff',
       strokeWidth: 2
+    },
+    dropVisual: {
+      shape: 'rect',
+      fill: '#ffdd44'
     }
   },
 
@@ -35,6 +39,10 @@ export const ITEMS = {
       fill: 'rgba(255, 100, 100, 0.3)',
       stroke: '#ff4444',
       strokeWidth: 2
+    },
+    dropVisual: {
+      shape: 'rect',
+      fill: '#ffaa44'
     }
   },
 
@@ -53,6 +61,10 @@ export const ITEMS = {
       fill: gray,
       // stroke: '#44ff44',
       // strokeWidth: 2
+    },
+    dropVisual: {
+      shape: 'rect',
+      fill: '#88dd88'
     }
   },
 
@@ -71,6 +83,10 @@ export const ITEMS = {
       fill: 'rgba(255, 100, 255, 0.5)',
       // stroke: '#ff44ff',
       // strokeWidth: 2
+    },
+    dropVisual: {
+      shape: 'rect',
+      fill: '#dddddd'
     }
   },
 
@@ -90,6 +106,10 @@ export const ITEMS = {
       fill: 'rgba(255, 0, 0, 0.2)',
       stroke: '#ff0000',
       strokeWidth: 1
+    },
+    dropVisual: {
+      shape: 'rect',
+      fill: '#66bb66'
     }
   },
 
@@ -108,6 +128,10 @@ export const ITEMS = {
       fill: 'rgba(255, 50, 50, 0.3)',
       stroke: '#ff3333',
       strokeWidth: 1
+    },
+    dropVisual: {
+      shape: 'rect',
+      fill: '#999999'
     }
   }
 };
