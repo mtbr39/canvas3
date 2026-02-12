@@ -1,6 +1,7 @@
 import { IdleState } from './IdleState.js';
 import { WanderState } from './WanderState.js';
 import { CombatState } from './CombatState.js';
+import { CollectItemState } from './CollectItemState.js';
 
 export function createCombatInterruptCheck() {
   return (entity, currentState) => {
@@ -53,6 +54,32 @@ export class DecisionState {
             behavior.changeState(new CombatState());
             return;
           }
+        }
+      }
+    }
+
+    // Check if there are nearby items to collect
+    const itemCollector = entity.getComponent('itemCollector');
+    const inventory = entity.getComponent('inventory');
+    if (itemCollector && inventory && !inventory.isFull()) {
+      const transform = entity.getComponent('transform');
+      if (transform) {
+        const game = entity.game;
+        const nearbyResults = game.spatialQuery.findNearbyEntities(
+          game.entities,
+          transform.x,
+          transform.y,
+          200,
+          (e) => {
+            if (e === entity) return false;
+            const itemInfo = e.getComponent('itemInfo');
+            return itemInfo && itemInfo.canPickup();
+          }
+        );
+
+        if (nearbyResults.length > 0) {
+          behavior.changeState(new CollectItemState());
+          return;
         }
       }
     }

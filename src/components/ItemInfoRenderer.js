@@ -24,11 +24,11 @@ export class ItemInfoRenderer {
 
     game.graphics.text(
       transform.x,
-      transform.y + offsetY + 10,
+      transform.y + offsetY + 8,
       itemData.name,
       {
         fill: '#000000',
-        fontSize: 12,
+        fontSize: 10,
         fontSizeScaleWithZoom: true
       }
     );

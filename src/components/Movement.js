@@ -42,6 +42,7 @@ export class Movement {
       return;
     }
 
+    transform.direction = Math.atan2(dy, dx);
     transform.x += (dx / dist) * step;
     transform.y += (dy / dist) * step;
   }

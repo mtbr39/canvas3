@@ -20,7 +20,7 @@ function createItem(x, y, itemType) {
   item.addComponent('tag', new Tag('item'));
   item.addComponent('itemInfo', new ItemInfo(itemType));
   item.addComponent('itemInfoRenderer', new ItemInfoRenderer());
-  item.addComponent('collider', new Collider({ type: 'rect', width: 16, height: 16 }));
+  item.addComponent('collider', new Collider({ type: 'rect', width: 12, height: 12 }));
 
   const dropVisual = itemData.dropVisual;
   item.addComponent('shapeRenderer', new ShapeRenderer({
