@@ -1,5 +1,6 @@
-const GATHER_RADIUS = 80;   // 全員がこの範囲内に入ったら中心点が前進する
-const FORMATION_SPEED = 50; // 中心点の移動速度 (px/s)
+const GATHER_RADIUS = 120;     // 全員が自分の目標位置に近づいたら中心点が前進する
+const FORMATION_SPEED = 50;   // 中心点の移動速度 (px/s)
+const FORMATION_RADIUS = 100;  // フォーメーション半径（メンバー間の間隔）
 
 export class PartyManager {
   constructor() {
@@ -69,6 +70,18 @@ export class PartyManager {
     return this.parties.get(partyId)?.formationCenter ?? null;
   }
 
+  getMemberTarget(entity) {
+    const partyId = this.entityToParty.get(entity);
+    if (partyId == null) return null;
+    const party = this.parties.get(partyId);
+    if (!party || !party.formationCenter) return null;
+    const offset = this._getFormationOffset(party, entity);
+    return {
+      x: party.formationCenter.x + offset.x,
+      y: party.formationCenter.y + offset.y,
+    };
+  }
+
   hasDestination(partyId) {
     return this.parties.get(partyId)?.destination != null;
   }
@@ -94,12 +107,13 @@ export class PartyManager {
   _advanceFormationCenter(party, dt) {
     const fc = party.formationCenter;
 
-    // 全員が formationCenter の GATHER_RADIUS 内に入るまで待つ
+    // 全員が自分の目標位置（中心点+オフセット）に近づくまで待つ
     const allGathered = [...party.members].every(member => {
       const t = member.getComponent('transform');
       if (!t) return true;
-      const dx = t.x - fc.x;
-      const dy = t.y - fc.y;
+      const offset = this._getFormationOffset(party, member);
+      const dx = t.x - (fc.x + offset.x);
+      const dy = t.y - (fc.y + offset.y);
       return dx * dx + dy * dy <= GATHER_RADIUS * GATHER_RADIUS;
     });
     if (!allGathered) return;
@@ -119,6 +133,18 @@ export class PartyManager {
 
     fc.x += (dx / dist) * step;
     fc.y += (dy / dist) * step;
+  }
+
+  _getFormationOffset(party, entity) {
+    const members = [...party.members];
+    const n = members.length;
+    if (n <= 1) return { x: 0, y: 0 };
+    const index = members.indexOf(entity);
+    const angle = (2 * Math.PI * index) / n;
+    return {
+      x: Math.cos(angle) * FORMATION_RADIUS,
+      y: Math.sin(angle) * FORMATION_RADIUS,
+    };
   }
 
   _getCentroid(party) {

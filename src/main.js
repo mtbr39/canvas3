@@ -13,19 +13,21 @@ game.register('partyManager', new PartyManager());
 
 console.log('v121');
 
-const WORLD_WIDTH = 16000;
-const WORLD_HEIGHT = 8000;
+const WORLD_WIDTH = 8000;
+const WORLD_HEIGHT = 4000;
+const HUMAN_COUNT = 30;
+const MONSTER_COUNT = 30;
 
 let humanCount = 0;
-while (humanCount < 20) {
-  const size = Math.min(Math.floor(Math.random() * 4) + 1, 20 - humanCount);
+while (humanCount < HUMAN_COUNT) {
+  const size = Math.min(Math.floor(Math.random() * 4) + 1, HUMAN_COUNT - humanCount);
   const x = (Math.random() - 0.5) * WORLD_WIDTH;
   const y = (Math.random() - 0.5) * WORLD_HEIGHT;
   createHumanParty(game, x, y, size);
   humanCount += size;
 }
 
-for (let i = 0; i < 20; i++) {
+for (let i = 0; i < MONSTER_COUNT; i++) {
   const x = (Math.random() - 0.5) * WORLD_WIDTH;
   const y = (Math.random() - 0.5) * WORLD_HEIGHT;
   game.addEntity(createMonster(x, y));
@@ -39,11 +41,11 @@ for (let i = 0; i < 30; i++) {
   game.addEntity(createItem(x, y, itemType));
 }
 
-for (const e of createVillage(1400, 400, '南の村')) {
+for (const e of createVillage(4000, 2000, '南の村')) {
   game.addEntity(e);
 }
 
-for (const e of createVillage(-8000, -400, '西の村')) {
+for (const e of createVillage(-4000, -400, '西の村')) {
   game.addEntity(e);
 }
 

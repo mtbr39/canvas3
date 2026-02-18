@@ -40,10 +40,10 @@ export class Party {
     this._manager.clearDestination(this.partyId);
   }
 
-  // このメンバーが今向かうべき座標 (formationCenter)
+  // このメンバーが今向かうべき座標 (formationCenter + 固有オフセット)
   getFormationTarget() {
     if (!this.isInParty()) return null;
-    return this._manager.getFormationCenter(this.partyId);
+    return this._manager.getMemberTarget(this.entity);
   }
 
   hasDestination() {
