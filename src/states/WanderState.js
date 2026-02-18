@@ -5,8 +5,9 @@ export class WanderState {
     const movement = entity.getComponent('movement');
     if (!movement) return;
 
-    const x = Math.random() * 1920;
-    const y = Math.random() * 1080;
+    const transform = entity.getComponent('transform');
+    const x = transform.x + (Math.random() - 0.5) * 1000;
+    const y = transform.y + (Math.random() - 0.5) * 1000;
     movement.moveTo(x, y);
   }
 
