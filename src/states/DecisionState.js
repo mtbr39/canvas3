@@ -41,7 +41,7 @@ export class DecisionState {
       if (transform) {
         const game = entity.game;
         const tag = entity.getComponent('tag');
-        const enemyTag = tag?.tag === 'human' ? 'monster' : 'human';
+        const enemyTag = tag?.hasTag('human') ? 'monster' : 'human';
 
         const nearbyEnemies = game.spatialQuery.findNearbyByTag(
           game.entities, transform.x, transform.y, combat.getAttackRange(), enemyTag

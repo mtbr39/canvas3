@@ -110,7 +110,7 @@ export class SpatialQuery {
   findNearbyByTag(entities, centerX, centerY, radius, tag) {
     return this.findNearbyEntities(entities, centerX, centerY, radius, (entity) => {
       const tagComp = entity.getComponent('tag');
-      return tagComp && tagComp.tag === tag;
+      return tagComp && tagComp.hasTag(tag);
     });
   }
 

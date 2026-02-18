@@ -3,6 +3,7 @@ import { createHuman } from './entities/Human.js';
 import { createMonster } from './entities/Monster.js';
 import createItem from './entities/Item.js';
 import { createLocation } from './entities/Location.js';
+import { createVillage } from './entities/Village.js';
 
 const canvas = document.getElementById('game-canvas');
 const game = new Game(canvas);
@@ -29,7 +30,8 @@ for (let i = 0; i < 30; i++) {
   game.addEntity(createItem(x, y, itemType));
 }
 
-game.addEntity(createLocation(400, 300, 'city', '王都'));
-game.addEntity(createLocation(900, 600, 'dungeon', 'ダンジョン'));
+for (const e of createVillage(1400, 400, '南の村')) {
+  game.addEntity(e);
+}
 
 game.run();
