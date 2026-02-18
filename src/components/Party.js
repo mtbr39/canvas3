@@ -2,13 +2,18 @@ export class Party {
   constructor() {
     this.entity = null;
     this.partyId = null;
+    this._detached = false;
   }
 
   get _manager() {
     return this.entity.game.registry.get('partyManager');
   }
 
+  detach()  { this._detached = true; }
+  reattach() { this._detached = false; }
+
   update() {
+    if (this._detached) return;
     const target = this.getFormationTarget();
     if (!target) return;
     const movement = this.entity.getComponent('movement');

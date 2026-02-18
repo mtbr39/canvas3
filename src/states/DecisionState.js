@@ -2,7 +2,8 @@ import { IdleState } from './IdleState.js';
 import { WanderState } from './WanderState.js';
 import { CombatState } from './CombatState.js';
 import { CollectItemState } from './CollectItemState.js';
-import { MoveToState } from './MoveToState.js';
+import { PartyMoveToState } from './PartyMoveToState.js';
+import { MoveToHomeState } from './MoveToHomeState.js';
 
 export function createCombatInterruptCheck() {
   return (entity, currentState) => {
@@ -40,7 +41,7 @@ export class DecisionState {
     const party = entity.getComponent('party');
     if (party && party.hasDestination()) {
       const dest = party.getDestination();
-      behavior.changeState(new MoveToState(dest.x, dest.y));
+      behavior.changeState(new PartyMoveToState(dest.x, dest.y));
       return;
     }
 
@@ -98,7 +99,7 @@ export class DecisionState {
       const nearestVillage = this._findNearestVillage(game, transform.x, transform.y);
       if (nearestVillage) {
         const dest = this._getVillageEntryPoint(transform, nearestVillage);
-        behavior.changeState(new MoveToState(dest.x, dest.y));
+        behavior.changeState(new PartyMoveToState(dest.x, dest.y));
         return;
       }
     }
@@ -106,6 +107,12 @@ export class DecisionState {
     // Check if homeless and in a village → check into an inn
     if (resident && !resident.home && resident.isInLocation('village')) {
       resident.checkIn();
+    }
+
+    // 家があれば帰宅する
+    if (resident?.home) {
+      behavior.changeState(new MoveToHomeState());
+      return;
     }
 
     // Default: Idle or Wander

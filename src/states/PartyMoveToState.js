@@ -1,6 +1,6 @@
 import { DecisionState } from './DecisionState.js';
 
-export class MoveToState {
+export class PartyMoveToState {
   constructor(x, y) {
     this.x = x;
     this.y = y;
