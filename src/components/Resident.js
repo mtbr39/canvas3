@@ -13,7 +13,10 @@ export class Resident {
 
     if (buildingEntity) {
       const inn = buildingEntity.getComponent('inn');
-      if (inn) inn.admit(this.entity);
+      if (inn) {
+        const party = this.entity.getComponent('party');
+        inn.admit(this.entity, party?.partyId ?? null);
+      }
     }
   }
 
@@ -32,12 +35,28 @@ export class Resident {
   checkIn() {
     const game = this.entity.game;
     const transform = this.entity.getComponent('transform');
+    const party = this.entity.getComponent('party');
+    const partyId = party?.partyId ?? null;
+
+    // パーティメンバーが既にチェックインしている宿に合流する
+    if (partyId !== null) {
+      for (const member of party.getMembers()) {
+        if (member === this.entity) continue;
+        const memberResident = member.getComponent('resident');
+        if (memberResident?.home) {
+          this.moveTo(memberResident.home);
+          return true;
+        }
+      }
+    }
+
+    // 自分のパーティが入れる宿を探す
     const nearbyInns = game.spatialQuery.findNearbyEntities(
       game.entities, transform.x, transform.y, 2000,
       (e) => {
         const tag = e.getComponent('tag');
         const inn = e.getComponent('inn');
-        return tag && tag.hasTag('inn') && inn && !inn.isFull();
+        return tag && tag.hasTag('inn') && inn && inn.isAvailableForParty(partyId);
       }
     );
 
