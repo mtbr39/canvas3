@@ -3,7 +3,8 @@ import { WanderState } from './WanderState.js';
 import { CombatState } from './CombatState.js';
 import { CollectItemState } from './CollectItemState.js';
 import { PartyMoveToState } from './PartyMoveToState.js';
-import { MoveToHomeState } from './MoveToHomeState.js';
+import { SoloMoveToState } from './SoloMoveToState.js';
+import { HomeState } from './HomeState.js';
 
 export function createCombatInterruptCheck() {
   return (entity, currentState) => {
@@ -111,7 +112,8 @@ export class DecisionState {
 
     // 家があれば帰宅する
     if (resident?.home) {
-      behavior.changeState(new MoveToHomeState());
+      const t = resident.home.getComponent('transform');
+      behavior.changeState(new SoloMoveToState(t.x, t.y, new HomeState()));
       return;
     }
 

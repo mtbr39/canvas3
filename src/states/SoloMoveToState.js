@@ -1,9 +1,10 @@
 import { DecisionState } from './DecisionState.js';
 
 export class SoloMoveToState {
-  constructor(x, y) {
+  constructor(x, y, nextState = null) {
     this.x = x;
     this.y = y;
+    this.nextState = nextState;
   }
 
   enter(entity) {
@@ -15,7 +16,7 @@ export class SoloMoveToState {
     const movement = entity.getComponent('movement');
     if (movement?.hasArrived()) {
       entity.getComponent('party')?.reattach();
-      entity.getComponent('behavior').changeState(new DecisionState());
+      entity.getComponent('behavior').changeState(this.nextState ?? new DecisionState());
     }
   }
 }
