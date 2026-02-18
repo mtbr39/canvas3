@@ -86,28 +86,8 @@ export class DecisionState {
 
     // Check if homeless and in a village → check into an inn
     const resident = entity.getComponent('resident');
-    if (resident && !resident.home) {
-      const game = entity.game;
-      const inVillage = game.spatialQuery.findCollidingEntities(entity, (e) => {
-        const tag = e.getComponent('tag');
-        return tag && tag.hasTag('village');
-      }).length > 0;
-
-      if (inVillage) {
-        const transform = entity.getComponent('transform');
-        const nearbyInns = game.spatialQuery.findNearbyEntities(
-          game.entities, transform.x, transform.y, 2000,
-          (e) => {
-            const tag = e.getComponent('tag');
-            const inn = e.getComponent('inn');
-            return tag && tag.hasTag('inn') && inn && !inn.isFull();
-          }
-        );
-
-        if (nearbyInns.length > 0) {
-          resident.moveTo(nearbyInns[0].entity);
-        }
-      }
+    if (resident && !resident.home && resident.isInLocation('village')) {
+      resident.checkIn();
     }
 
     // Default: Idle or Wander
