@@ -14,6 +14,7 @@ import { FloatingText } from '../components/FloatingText.js';
 import { createCombatInterruptCheck } from '../states/DecisionState.js';
 import Inventory from '../components/Inventory.js';
 import ItemCollector from '../components/ItemCollector.js';
+import { Resident } from '../components/Resident.js';
 import { colors } from '../data/Colors.js';
 
 export function createHuman(x, y) {
@@ -36,7 +37,8 @@ export function createHuman(x, y) {
     .addComponent('infoRenderer', new InfoRenderer())
     .addComponent('floatingText', new FloatingText())
     .addComponent('inventory', new Inventory())
-    .addComponent('itemCollector', new ItemCollector());
+    .addComponent('itemCollector', new ItemCollector())
+    .addComponent('resident', new Resident());
 
   // Only adventurers get combat component
   if (isAdventurer) {

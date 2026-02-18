@@ -3,6 +3,7 @@ import { Transform } from '../components/Transform.js';
 import { Collider } from '../components/Collider.js';
 import { Tag } from '../components/Tag.js';
 import { ShapeRenderer } from '../components/ShapeRenderer.js';
+import { Inn } from '../components/Inn.js';
 import { colors } from '../data/Colors.js';
 
 export const BUILDING_CONFIGS = {
@@ -32,10 +33,12 @@ export function createBuilding(x, y, type) {
   entity
     .addComponent('transform', new Transform(x, y))
     .addComponent('collider', new Collider({ type: 'rect', width: config.width, height: config.height }))
-    .addComponent('tag', new Tag('building'))
+    .addComponent('tag', new Tag('building').add(type))
     .addComponent('shapeRenderer', new ShapeRenderer({ stroke: config.stroke, strokeWidth: config.strokeWidth }));
 
-  entity.buildingType = type;
+  if (type === 'inn') {
+    entity.addComponent('inn', new Inn());
+  }
 
   return entity;
 }
