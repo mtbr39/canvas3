@@ -8,9 +8,9 @@ export class Graphics {
   }
 
   updateScale() {
-    const dpr = window.devicePixelRatio || 1;
-    const w = this.ctx.canvas.width / dpr;
-    const h = this.ctx.canvas.height / dpr;
+    this.dpr = window.devicePixelRatio || 1;
+    const w = this.ctx.canvas.width / this.dpr;
+    const h = this.ctx.canvas.height / this.dpr;
     this.scale = (w * h) / REF_AREA;
   }
 
@@ -27,11 +27,8 @@ export class Graphics {
 
     if (stroke) {
       this.ctx.strokeStyle = stroke;
-      // デフォルトではズームに関わらず一定の太さ、strokeScaleWithZoom=trueでズームに連動
-      const actualStrokeWidth = strokeScaleWithZoom
-        ? strokeWidth
-        : strokeWidth / this.camera.zoom;
-      this.ctx.lineWidth = actualStrokeWidth;
+      const divisor = strokeScaleWithZoom ? this.dpr : this.camera.zoom * this.dpr;
+      this.ctx.lineWidth = strokeWidth / divisor;
       this.ctx.stroke();
     }
 
@@ -51,10 +48,8 @@ export class Graphics {
 
     if (stroke) {
       this.ctx.strokeStyle = stroke;
-      const actualStrokeWidth = strokeScaleWithZoom
-        ? strokeWidth
-        : strokeWidth / this.camera.zoom;
-      this.ctx.lineWidth = actualStrokeWidth;
+      const divisor = strokeScaleWithZoom ? this.dpr : this.camera.zoom * this.dpr;
+      this.ctx.lineWidth = strokeWidth / divisor;
       this.ctx.strokeRect(screenX, screenY, width * this.scale, height * this.scale);
     }
   }
