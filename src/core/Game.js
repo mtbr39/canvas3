@@ -9,6 +9,7 @@ export class Game {
     this.camera = new Camera(canvas);
     this.graphics = new Graphics(this.ctx, this.camera);
     this.entities = [];
+    this.registry = new Map();
     this.spatialQuery = new SpatialQuery(this);
     this.lastTime = 0;
     this.running = false;
@@ -28,6 +29,12 @@ export class Game {
     this.graphics.updateScale();
   }
 
+  register(name, service) {
+    service.game = this;
+    this.registry.set(name, service);
+    return this;
+  }
+
   addEntity(entity) {
     entity.game = this;
     this.entities.push(entity);
@@ -36,6 +43,10 @@ export class Game {
 
   update(deltaTime) {
     this.deltaTime = deltaTime;
+
+    for (const service of this.registry.values()) {
+      if (service.update) service.update();
+    }
 
     for (const entity of this.entities) {
       entity.update();
