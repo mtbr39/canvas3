@@ -1,6 +1,6 @@
 import { Game } from './core/Game.js';
 import { PartyManager } from './components/PartyManager.js';
-import { createHuman } from './entities/Human.js';
+import { createHumanParty } from './entities/Human.js';
 import { createMonster } from './entities/Monster.js';
 import createItem from './entities/Item.js';
 import { createLocation } from './entities/Location.js';
@@ -16,10 +16,13 @@ console.log('v121');
 const WORLD_WIDTH = 16000;
 const WORLD_HEIGHT = 8000;
 
-for (let i = 0; i < 20; i++) {
+let humanCount = 0;
+while (humanCount < 20) {
+  const size = Math.min(Math.floor(Math.random() * 4) + 1, 20 - humanCount);
   const x = (Math.random() - 0.5) * WORLD_WIDTH;
   const y = (Math.random() - 0.5) * WORLD_HEIGHT;
-  game.addEntity(createHuman(x, y));
+  createHumanParty(game, x, y, size);
+  humanCount += size;
 }
 
 for (let i = 0; i < 20; i++) {

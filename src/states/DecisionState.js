@@ -2,6 +2,7 @@ import { IdleState } from './IdleState.js';
 import { WanderState } from './WanderState.js';
 import { CombatState } from './CombatState.js';
 import { CollectItemState } from './CollectItemState.js';
+import { MoveToState } from './MoveToState.js';
 
 export function createCombatInterruptCheck() {
   return (entity, currentState) => {
@@ -33,13 +34,21 @@ export class DecisionState {
     const behavior = entity.getComponent('behavior');
     if (!behavior) return;
 
-    const combat = entity.getComponent('combat');
+    const game = entity.game;
+
+    // パーティがすでに移動中なら合流する
+    const party = entity.getComponent('party');
+    if (party && party.hasDestination()) {
+      const dest = party.getDestination();
+      behavior.changeState(new MoveToState(dest.x, dest.y));
+      return;
+    }
 
     // Check if this entity seeks combat
+    const combat = entity.getComponent('combat');
     if (combat && combat.shouldSeekCombat) {
       const transform = entity.getComponent('transform');
       if (transform) {
-        const game = entity.game;
         const tag = entity.getComponent('tag');
         const enemyTag = tag?.hasTag('human') ? 'monster' : 'human';
 
@@ -47,7 +56,6 @@ export class DecisionState {
           game.entities, transform.x, transform.y, combat.getAttackRange(), enemyTag
         );
 
-        // Check if any nearby enemies are alive
         for (const result of nearbyEnemies) {
           const health = result.entity.getComponent('health');
           if (health && !health.isDead) {
@@ -64,7 +72,6 @@ export class DecisionState {
     if (itemCollector && inventory && !inventory.isFull()) {
       const transform = entity.getComponent('transform');
       if (transform) {
-        const game = entity.game;
         const nearbyResults = game.spatialQuery.findNearbyEntities(
           game.entities,
           transform.x,
@@ -84,21 +91,70 @@ export class DecisionState {
       }
     }
 
-    // Check if homeless and in a village → check into an inn
+    // 村にいなければ最寄りの村へ向かう
     const resident = entity.getComponent('resident');
+    if (resident && !resident.isInLocation('village')) {
+      const transform = entity.getComponent('transform');
+      const nearestVillage = this._findNearestVillage(game, transform.x, transform.y);
+      if (nearestVillage) {
+        const dest = this._getVillageEntryPoint(transform, nearestVillage);
+        behavior.changeState(new MoveToState(dest.x, dest.y));
+        return;
+      }
+    }
+
+    // Check if homeless and in a village → check into an inn
     if (resident && !resident.home && resident.isInLocation('village')) {
       resident.checkIn();
     }
 
     // Default: Idle or Wander
-    const rand = Math.random();
-
-    if (rand < 0.5) {
-      // 50%の確率でIdleState
+    if (Math.random() < 0.5) {
       behavior.changeState(new IdleState());
     } else {
-      // 50%の確率でWanderState
       behavior.changeState(new WanderState());
     }
+  }
+
+  _findNearestVillage(game, x, y) {
+    let nearest = null;
+    let nearestDist = Infinity;
+    for (const entity of game.entities) {
+      const tag = entity.getComponent('tag');
+      if (!tag || !tag.hasTag('village')) continue;
+      const t = entity.getComponent('transform');
+      if (!t) continue;
+      const dx = t.x - x;
+      const dy = t.y - y;
+      const dist = dx * dx + dy * dy;
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearest = entity;
+      }
+    }
+    return nearest;
+  }
+
+  // 村の縁から margin だけ内側の、最も近い入村地点を返す
+  _getVillageEntryPoint(fromTransform, villageEntity, margin = 200) {
+    const vt = villageEntity.getComponent('transform');
+    const collider = villageEntity.getComponent('collider');
+    const hw = collider.shape.width / 2;
+    const hh = collider.shape.height / 2;
+
+    // fromTransform から最も近い矩形境界上の点
+    const edgeX = Math.max(vt.x - hw, Math.min(fromTransform.x, vt.x + hw));
+    const edgeY = Math.max(vt.y - hh, Math.min(fromTransform.y, vt.y + hh));
+
+    // 境界点から中心へ margin 分引き込む
+    const dx = vt.x - edgeX;
+    const dy = vt.y - edgeY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist <= margin) return { x: vt.x, y: vt.y };
+
+    return {
+      x: edgeX + (dx / dist) * margin,
+      y: edgeY + (dy / dist) * margin,
+    };
   }
 }

@@ -73,6 +73,10 @@ export class PartyManager {
     return this.parties.get(partyId)?.destination != null;
   }
 
+  getDestination(partyId) {
+    return this.parties.get(partyId)?.destination ?? null;
+  }
+
   getPartyId(entity) {
     return this.entityToParty.get(entity) ?? null;
   }

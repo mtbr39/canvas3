@@ -18,6 +18,22 @@ import { Resident } from '../components/Resident.js';
 import { Party } from '../components/Party.js';
 import { colors } from '../data/Colors.js';
 
+// x, y を中心に size 人のパーティを生成してgameに追加する
+export function createHumanParty(game, x, y, size) {
+  const members = [];
+  for (let i = 0; i < size; i++) {
+    const mx = x + (Math.random() - 0.5) * 100;
+    const my = y + (Math.random() - 0.5) * 100;
+    const human = createHuman(mx, my);
+    game.addEntity(human);
+    members.push(human);
+  }
+  if (members.length > 1) {
+    members[0].getComponent('party').form(members.slice(1));
+  }
+  return members;
+}
+
 export function createHuman(x, y) {
   const entity = new Entity();
 

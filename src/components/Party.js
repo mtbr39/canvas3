@@ -51,6 +51,11 @@ export class Party {
     return this._manager.hasDestination(this.partyId);
   }
 
+  getDestination() {
+    if (!this.isInParty()) return null;
+    return this._manager.getDestination(this.partyId);
+  }
+
   // 自分を含む新パーティを結成する
   form(memberEntities) {
     this.leave();
