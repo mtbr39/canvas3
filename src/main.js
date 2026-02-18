@@ -2,6 +2,7 @@ import { Game } from './core/Game.js';
 import { createHuman } from './entities/Human.js';
 import { createMonster } from './entities/Monster.js';
 import createItem from './entities/Item.js';
+import { createLocation } from './entities/Location.js';
 
 const canvas = document.getElementById('game-canvas');
 const game = new Game(canvas);
@@ -27,5 +28,8 @@ for (let i = 0; i < 30; i++) {
   const itemType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
   game.addEntity(createItem(x, y, itemType));
 }
+
+game.addEntity(createLocation(400, 300, 'city', '王都'));
+game.addEntity(createLocation(900, 600, 'dungeon', 'ダンジョン'));
 
 game.run();
