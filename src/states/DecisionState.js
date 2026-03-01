@@ -46,15 +46,23 @@ export class DecisionState {
       return;
     }
 
-    // パーティ内に戦闘中のメンバーがいる場合は新たな移動を開始しない
+    // パーティ内に戦闘中のメンバーがいる場合
     if (party && party.isInParty()) {
-      const inCombat = party.getMembers().some(m => {
+      const fightingMember = party.getMembers().find(m => {
         const b = m.getComponent('behavior');
         return b?.currentState?.constructor.name === 'CombatState';
       });
-      if (inCombat) {
-        behavior.changeState(new IdleState());
-        return;
+      if (fightingMember) {
+        const combat = entity.getComponent('combat');
+        if (combat) {
+          const allyTarget = fightingMember.getComponent('behavior').currentState.target;
+          if (allyTarget) {
+            const state = new CombatState();
+            state.target = allyTarget;
+            behavior.changeState(state);
+            return;
+          }
+        }
       }
     }
 

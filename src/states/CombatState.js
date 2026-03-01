@@ -9,7 +9,7 @@ export class CombatState {
 
   enter(entity) {
     this.checkTimer = 0;
-    this.findTarget(entity);
+    if (!this.target) this.findTarget(entity);
     entity.getComponent('party')?.clearDestination();
     const movement = entity.getComponent('movement');
     const combat = entity.getComponent('combat');
