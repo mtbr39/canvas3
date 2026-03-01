@@ -1,10 +1,13 @@
 import { createAttackHitbox } from '../entities/AttackHitbox.js';
 
+const FLEE_SPEED_MULTIPLIER = 1.5;
+
 export class Combat {
   constructor(shouldSeekCombat = false) {
     this.entity = null;
     this.shouldSeekCombat = shouldSeekCombat;
     this.cooldownTimer = 0;
+    this.fleeSpeedMultiplier = FLEE_SPEED_MULTIPLIER;
   }
 
   static createAggressive() {
@@ -40,8 +43,6 @@ export class Combat {
   }
 
   findNearbyEnemy() {
-    if (!this.shouldSeekCombat) return null;
-
     const transform = this.entity.getComponent('transform');
     if (!transform) return null;
 

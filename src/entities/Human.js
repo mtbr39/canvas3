@@ -58,7 +58,7 @@ export function createHuman(x, y) {
     .addComponent('resident', new Resident())
     .addComponent('party', new Party());
 
-  // Only adventurers get combat component
+  const behavior = entity.getComponent('behavior');
   if (isAdventurer) {
     const weapons = ['sword', 'axe', 'bow', 'staff'];
     const randomWeapon = weapons[Math.floor(Math.random() * weapons.length)];
@@ -66,11 +66,11 @@ export function createHuman(x, y) {
     entity
       .addComponent('equipment', new Equipment(randomWeapon))
       .addComponent('combat', Combat.createAggressive());
-
-    const behavior = entity.getComponent('behavior');
-    behavior.addInterruptCheck(createCombatInterruptCheck());
-
+  } else {
+    entity.addComponent('combat', Combat.createDefensive());
   }
+
+  behavior.addInterruptCheck(createCombatInterruptCheck());
 
   return entity;
 }

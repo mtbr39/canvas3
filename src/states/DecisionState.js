@@ -46,6 +46,18 @@ export class DecisionState {
       return;
     }
 
+    // パーティ内に戦闘中のメンバーがいる場合は新たな移動を開始しない
+    if (party && party.isInParty()) {
+      const inCombat = party.getMembers().some(m => {
+        const b = m.getComponent('behavior');
+        return b?.currentState?.constructor.name === 'CombatState';
+      });
+      if (inCombat) {
+        behavior.changeState(new IdleState());
+        return;
+      }
+    }
+
     // Check if this entity seeks combat
     const combat = entity.getComponent('combat');
     if (combat && combat.shouldSeekCombat) {

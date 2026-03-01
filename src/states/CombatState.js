@@ -10,7 +10,14 @@ export class CombatState {
   enter(entity) {
     this.checkTimer = 0;
     this.findTarget(entity);
-    const tag = entity.getComponent('tag');
+    entity.getComponent('party')?.clearDestination();
+    const movement = entity.getComponent('movement');
+    const combat = entity.getComponent('combat');
+    if (movement && combat && !combat.shouldSeekCombat) {
+      this.originalSpeed = movement.speed;
+      movement.speed = movement.speed * combat.fleeSpeedMultiplier;
+    }
+    movement?.stop();
   }
 
   findTarget(entity) {
@@ -75,6 +82,19 @@ export class CombatState {
 
     // Calculate center-to-center distance
     const centerDistance = game.spatialQuery.getDistance(entity, this.target);
+
+    if (!combat.shouldSeekCombat) {
+      // Flee: move away from the enemy
+      const transform = entity.getComponent('transform');
+      const dx = transform.x - targetTransform.x;
+      const dy = transform.y - targetTransform.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 0) {
+        movement.moveTo(transform.x + (dx / dist) * 200, transform.y + (dy / dist) * 200);
+      }
+      return;
+    }
+
     const weaponRange = combat.getWeaponRange();
 
     // Within weapon range - try to attack
@@ -82,8 +102,6 @@ export class CombatState {
       movement.stop();
       if (combat.canAttack()) {
         combat.attack(this.target);
-      } else {
-
       }
     } else {
       // Move closer to get within weapon range
@@ -93,7 +111,13 @@ export class CombatState {
 
   exit(entity) {
     const movement = entity.getComponent('movement');
-    if (movement) movement.stop();
+    if (movement) {
+      movement.stop();
+      if (this.originalSpeed !== undefined) {
+        movement.speed = this.originalSpeed;
+        this.originalSpeed = undefined;
+      }
+    }
     this.target = null;
   }
 }

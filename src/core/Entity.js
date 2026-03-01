@@ -1,5 +1,8 @@
+let nextId = 0;
+
 export class Entity {
   constructor() {
+    this.id = nextId++;
     this.components = new Map();
     this.game = null;
   }
