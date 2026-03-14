@@ -13,6 +13,10 @@ import { InfoRenderer } from '../components/InfoRenderer.js';
 import { FloatingText } from '../components/FloatingText.js';
 import { Loot } from '../components/Loot.js';
 
+const MONSTER_STATS = {
+  detectionRange: 250,
+};
+
 export function createMonster(x, y) {
   const entity = new Entity();
 
@@ -30,7 +34,7 @@ export function createMonster(x, y) {
     .addComponent('infoRenderer', new InfoRenderer())
     .addComponent('floatingText', new FloatingText())
     .addComponent('equipment', new Equipment(randomAttack))
-    .addComponent('combat', Combat.createAggressive())
+    .addComponent('combat', Combat.createAggressive(MONSTER_STATS.detectionRange))
     .addComponent('loot', new Loot());
 
   return entity;

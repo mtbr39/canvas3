@@ -18,6 +18,10 @@ import { Resident } from '../components/Resident.js';
 import { Party } from '../components/Party.js';
 import { colors } from '../data/Colors.js';
 
+const HUMAN_STATS = {
+  detectionRange: 200,
+};
+
 // x, y を中心に size 人のパーティを生成してgameに追加する
 export function createHumanParty(game, x, y, size) {
   const members = [];
@@ -65,9 +69,9 @@ export function createHuman(x, y) {
 
     entity
       .addComponent('equipment', new Equipment(randomWeapon))
-      .addComponent('combat', Combat.createAggressive());
+      .addComponent('combat', Combat.createAggressive(HUMAN_STATS.detectionRange));
   } else {
-    entity.addComponent('combat', Combat.createDefensive());
+    entity.addComponent('combat', Combat.createDefensive(HUMAN_STATS.detectionRange));
   }
 
   behavior.addInterruptCheck(createCombatInterruptCheck());

@@ -3,19 +3,20 @@ import { createAttackHitbox } from '../entities/AttackHitbox.js';
 const FLEE_SPEED_MULTIPLIER = 1.5;
 
 export class Combat {
-  constructor(shouldSeekCombat = false) {
+  constructor(shouldSeekCombat = false, detectionRange) {
     this.entity = null;
     this.shouldSeekCombat = shouldSeekCombat;
     this.cooldownTimer = 0;
     this.fleeSpeedMultiplier = FLEE_SPEED_MULTIPLIER;
+    this.detectionRange = detectionRange;
   }
 
-  static createAggressive() {
-    return new Combat(true);
+  static createAggressive(detectionRange) {
+    return new Combat(true, detectionRange);
   }
 
-  static createDefensive() {
-    return new Combat(false);
+  static createDefensive(detectionRange) {
+    return new Combat(false, detectionRange);
   }
 
   getAttackRange() {
@@ -51,7 +52,7 @@ export class Combat {
     const enemyTag = tag?.hasTag('human') ? 'monster' : 'human';
 
     const nearbyEnemies = game.spatialQuery.findNearbyByTag(
-      game.entities, transform.x, transform.y, this.getAttackRange(), enemyTag
+      game.entities, transform.x, transform.y, this.detectionRange, enemyTag
     );
 
     for (const result of nearbyEnemies) {
