@@ -103,6 +103,25 @@ export const ITEMS = {
       shape: 'rect',
       fill: colors.gray06
     }
+  },
+
+  // === 素材 ===
+  hide: {
+    name: '普通の皮',
+    category: 'material',
+    dropVisual: {
+      shape: 'rect',
+      fill: colors.brown01
+    }
+  },
+
+  meat: {
+    name: '普通の肉',
+    category: 'material',
+    dropVisual: {
+      shape: 'rect',
+      fill: colors.pink01
+    }
   }
 };
 

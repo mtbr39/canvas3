@@ -48,9 +48,7 @@ class ItemCollector {
     return false;
   }
 
-  update() {
-    if (!this.autoPickup) return;
-
+  collectNearby() {
     const spatialQuery = this.entity.game.spatialQuery;
     if (!spatialQuery) return;
 
@@ -74,6 +72,11 @@ class ItemCollector {
         break;
       }
     }
+  }
+
+  update() {
+    if (!this.autoPickup) return;
+    this.collectNearby();
   }
 }
 

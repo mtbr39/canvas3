@@ -30,8 +30,11 @@ export class Health {
   }
 
   onDeath() {
-    if (this.entity && this.entity.game) {
-      this.entity.game.markEntityForRemoval(this.entity);
-    }
+    if (!this.entity || !this.entity.game) return;
+
+    const loot = this.entity.getComponent('loot');
+    if (loot) loot.drop();
+
+    this.entity.game.markEntityForRemoval(this.entity);
   }
 }

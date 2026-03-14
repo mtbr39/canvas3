@@ -11,6 +11,7 @@ import { Collider } from '../components/Collider.js';
 import { Tag } from '../components/Tag.js';
 import { InfoRenderer } from '../components/InfoRenderer.js';
 import { FloatingText } from '../components/FloatingText.js';
+import { Loot } from '../components/Loot.js';
 
 export function createMonster(x, y) {
   const entity = new Entity();
@@ -29,7 +30,8 @@ export function createMonster(x, y) {
     .addComponent('infoRenderer', new InfoRenderer())
     .addComponent('floatingText', new FloatingText())
     .addComponent('equipment', new Equipment(randomAttack))
-    .addComponent('combat', Combat.createAggressive());
+    .addComponent('combat', Combat.createAggressive())
+    .addComponent('loot', new Loot());
 
   return entity;
 }

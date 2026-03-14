@@ -1,4 +1,5 @@
 import { DecisionState } from './DecisionState.js';
+import { CollectItemState } from './CollectItemState.js';
 
 export class PartyMoveToState {
   constructor(x, y) {
@@ -19,6 +20,26 @@ export class PartyMoveToState {
   }
 
   update(entity) {
+    const itemCollector = entity.getComponent('itemCollector');
+    const inventory = entity.getComponent('inventory');
+    if (itemCollector && inventory && !inventory.isFull()) {
+      const transform = entity.getComponent('transform');
+      const nearbyResults = entity.game.spatialQuery.findNearbyEntities(
+        entity.game.entities,
+        transform.x, transform.y,
+        200,
+        (e) => {
+          if (e === entity) return false;
+          const itemInfo = e.getComponent('itemInfo');
+          return itemInfo && itemInfo.canPickup();
+        }
+      );
+      if (nearbyResults.length > 0) {
+        entity.getComponent('behavior').changeState(new CollectItemState());
+        return;
+      }
+    }
+
     const party = entity.getComponent('party');
     if (party && party.isInParty()) {
       if (!party.hasDestination()) {

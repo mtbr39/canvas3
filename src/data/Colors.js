@@ -27,6 +27,10 @@ export const colors = {
   // === Purple/Magenta ===
   purple01: 'rgba(220, 110, 220, 0.5)',
 
+  // === Brown/Pink ===
+  brown01: '#aa7744',
+  pink01: '#dd7766',
+
   // === Gray ===
   gray01: 'rgba(140, 140, 140, 0.5)',
   gray02: '#333333',

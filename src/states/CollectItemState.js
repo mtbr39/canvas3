@@ -8,6 +8,8 @@ export class CollectItemState {
   }
 
   enter(entity) {
+    entity.getComponent('party')?.detach();
+
     const movement = entity.getComponent('movement');
     if (movement) movement.stop();
 
@@ -16,6 +18,10 @@ export class CollectItemState {
       const behavior = entity.getComponent('behavior');
       behavior.changeState(new DecisionState());
     }
+  }
+
+  exit(entity) {
+    entity.getComponent('party')?.reattach();
   }
 
   update(entity) {
