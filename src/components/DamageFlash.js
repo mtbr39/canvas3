@@ -9,9 +9,9 @@ export class DamageFlash {
     const game = this.entity.game;
     this.timer -= game.deltaTime;
 
-    const shapeRenderer = this.entity.getComponent('shapeRenderer');
-    if (shapeRenderer && this.timer > 0 && !shapeRenderer.flashTimer) {
-      shapeRenderer.flash(this.duration);
+    const renderer = this.entity.getComponent('shapeRenderer') || this.entity.getComponent('monsterAppearance');
+    if (renderer && this.timer > 0 && !renderer.flashTimer) {
+      renderer.flash(this.duration);
     }
 
     if (this.timer <= 0) {

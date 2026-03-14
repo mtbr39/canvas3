@@ -54,6 +54,31 @@ export class Graphics {
     }
   }
 
+  triangle(x, y, radius, options = {}) {
+    const { fill, stroke, strokeWidth = 1, strokeScaleWithZoom = false, rotation = 0 } = options;
+
+    this.ctx.beginPath();
+    for (let i = 0; i < 3; i++) {
+      const angle = (Math.PI * 2 / 3) * i + rotation;
+      const px = x * this.scale + Math.cos(angle) * radius * this.scale;
+      const py = y * this.scale + Math.sin(angle) * radius * this.scale;
+      i === 0 ? this.ctx.moveTo(px, py) : this.ctx.lineTo(px, py);
+    }
+    this.ctx.closePath();
+
+    if (fill) {
+      this.ctx.fillStyle = fill;
+      this.ctx.fill();
+    }
+
+    if (stroke) {
+      this.ctx.strokeStyle = stroke;
+      const divisor = strokeScaleWithZoom ? this.dpr : this.camera.zoom * this.dpr;
+      this.ctx.lineWidth = strokeWidth / divisor;
+      this.ctx.stroke();
+    }
+  }
+
   text(x, y, text, options = {}) {
     const {
       fill = '#ffffff',
