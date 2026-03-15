@@ -21,27 +21,8 @@ export class CombatState {
   }
 
   findTarget(entity) {
-    const transform = entity.getComponent('transform');
     const combat = entity.getComponent('combat');
-    if (!transform || !combat) return;
-
-    const game = entity.game;
-    const tag = entity.getComponent('tag');
-    const enemyTag = tag?.hasTag('human') ? 'monster' : 'human';
-
-    const nearbyEnemies = game.spatialQuery.findNearbyByTag(
-      game.entities, transform.x, transform.y, combat.getAttackRange(), enemyTag
-    );
-
-    // Find first alive enemy
-    for (const result of nearbyEnemies) {
-      const health = result.entity.getComponent('health');
-      if (health && !health.isDead) {
-        this.target = result.entity;
-        return;
-      }
-    }
-    this.target = null;
+    this.target = combat ? combat.findNearbyEnemy() : null;
   }
 
   update(entity) {
@@ -70,6 +51,7 @@ export class CombatState {
     const targetHealth = this.target.getComponent('health');
     if (!targetHealth || targetHealth.isDead) {
       this.target = null;
+      behavior.changeState(new DecisionState());
       return;
     }
 
@@ -77,6 +59,7 @@ export class CombatState {
     const targetTransform = this.target.getComponent('transform');
     if (!targetTransform) {
       this.target = null;
+      behavior.changeState(new DecisionState());
       return;
     }
 

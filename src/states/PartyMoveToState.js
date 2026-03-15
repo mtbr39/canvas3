@@ -10,7 +10,7 @@ export class PartyMoveToState {
   enter(entity) {
     const party = entity.getComponent('party');
     if (party && party.isInParty()) {
-      // パーティがまだ移動中でなければ目的地をセット
+      party.reattach();
       if (!party.hasDestination()) {
         party.setDestination(this.x, this.y);
       }
@@ -19,25 +19,15 @@ export class PartyMoveToState {
     }
   }
 
+  exit(entity) {
+    entity.getComponent('party')?.detach();
+  }
+
   update(entity) {
     const itemCollector = entity.getComponent('itemCollector');
-    const inventory = entity.getComponent('inventory');
-    if (itemCollector && inventory && !inventory.isFull()) {
-      const transform = entity.getComponent('transform');
-      const nearbyResults = entity.game.spatialQuery.findNearbyEntities(
-        entity.game.entities,
-        transform.x, transform.y,
-        200,
-        (e) => {
-          if (e === entity) return false;
-          const itemInfo = e.getComponent('itemInfo');
-          return itemInfo && itemInfo.canPickup();
-        }
-      );
-      if (nearbyResults.length > 0) {
-        entity.getComponent('behavior').changeState(new CollectItemState());
-        return;
-      }
+    if (itemCollector && itemCollector.findNearbyItem()) {
+      entity.getComponent('behavior').changeState(new CollectItemState());
+      return;
     }
 
     const party = entity.getComponent('party');

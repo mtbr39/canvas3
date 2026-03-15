@@ -4,24 +4,15 @@ import { ITEMS } from '../data/Items.js';
 export class CollectItemState {
   constructor() {
     this.targetItem = null;
-    this.searchRange = 200;
   }
 
   enter(entity) {
-    entity.getComponent('party')?.detach();
+    entity.getComponent('movement')?.stop();
 
-    const movement = entity.getComponent('movement');
-    if (movement) movement.stop();
-
-    this.targetItem = this.findNearestItem(entity);
+    this.targetItem = entity.getComponent('itemCollector')?.findNearbyItem() ?? null;
     if (!this.targetItem) {
-      const behavior = entity.getComponent('behavior');
-      behavior.changeState(new DecisionState());
+      entity.getComponent('behavior').changeState(new DecisionState());
     }
-  }
-
-  exit(entity) {
-    entity.getComponent('party')?.reattach();
   }
 
   update(entity) {
@@ -81,27 +72,4 @@ export class CollectItemState {
     }
   }
 
-  findNearestItem(entity) {
-    const transform = entity.getComponent('transform');
-    const inventory = entity.getComponent('inventory');
-    const spatialQuery = entity.game.spatialQuery;
-
-    if (!transform || !inventory || !spatialQuery) return null;
-    if (inventory.isFull()) return null;
-
-    const nearbyResults = spatialQuery.findNearbyEntities(
-      entity.game.entities,
-      transform.x,
-      transform.y,
-      this.searchRange,
-      (e) => {
-        if (e === entity) return false;
-        const itemInfo = e.getComponent('itemInfo');
-        return itemInfo && itemInfo.canPickup();
-      }
-    );
-
-    if (nearbyResults.length === 0) return null;
-    return nearbyResults[0].entity;
-  }
 }

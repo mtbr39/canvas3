@@ -4,7 +4,27 @@ class ItemCollector {
   constructor() {
     this.entity = null;
     this.pickupRange = 30;
+    this.searchRange = 200;
     this.autoPickup = false;
+  }
+
+  findNearbyItem() {
+    const transform = this.entity.getComponent('transform');
+    const inventory = this.entity.getComponent('inventory');
+    if (!transform || !inventory || inventory.isFull()) return null;
+
+    const results = this.entity.game.spatialQuery.findNearbyEntities(
+      this.entity.game.entities,
+      transform.x, transform.y,
+      this.searchRange,
+      (e) => {
+        if (e === this.entity) return false;
+        const itemInfo = e.getComponent('itemInfo');
+        return itemInfo && itemInfo.canPickup();
+      }
+    );
+
+    return results.length > 0 ? results[0].entity : null;
   }
 
   tryPickup(itemEntity) {

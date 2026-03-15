@@ -38,11 +38,10 @@ export class DecisionState {
 
     const game = entity.game;
 
-    // パーティがすでに移動中なら合流する
-    const party = entity.getComponent('party');
-    if (party && party.hasDestination()) {
-      const dest = party.getDestination();
-      behavior.changeState(new PartyMoveToState(dest.x, dest.y));
+    // Check if there are nearby items to collect
+    const itemCollector = entity.getComponent('itemCollector');
+    if (itemCollector && itemCollector.findNearbyItem()) {
+      behavior.changeState(new CollectItemState());
       return;
     }
 
@@ -66,51 +65,19 @@ export class DecisionState {
       }
     }
 
-    // Check if this entity seeks combat
-    const combat = entity.getComponent('combat');
-    if (combat && combat.shouldSeekCombat) {
-      const transform = entity.getComponent('transform');
-      if (transform) {
-        const tag = entity.getComponent('tag');
-        const enemyTag = tag?.hasTag('human') ? 'monster' : 'human';
-
-        const nearbyEnemies = game.spatialQuery.findNearbyByTag(
-          game.entities, transform.x, transform.y, combat.getAttackRange(), enemyTag
-        );
-
-        for (const result of nearbyEnemies) {
-          const health = result.entity.getComponent('health');
-          if (health && !health.isDead) {
-            behavior.changeState(new CombatState());
-            return;
-          }
-        }
-      }
+    // パーティがすでに移動中なら合流する
+    const party = entity.getComponent('party');
+    if (party && party.hasDestination()) {
+      const dest = party.getDestination();
+      behavior.changeState(new PartyMoveToState(dest.x, dest.y));
+      return;
     }
 
-    // Check if there are nearby items to collect
-    const itemCollector = entity.getComponent('itemCollector');
-    const inventory = entity.getComponent('inventory');
-    if (itemCollector && inventory && !inventory.isFull()) {
-      const transform = entity.getComponent('transform');
-      if (transform) {
-        const nearbyResults = game.spatialQuery.findNearbyEntities(
-          game.entities,
-          transform.x,
-          transform.y,
-          200,
-          (e) => {
-            if (e === entity) return false;
-            const itemInfo = e.getComponent('itemInfo');
-            return itemInfo && itemInfo.canPickup();
-          }
-        );
-
-        if (nearbyResults.length > 0) {
-          behavior.changeState(new CollectItemState());
-          return;
-        }
-      }
+    // Check if this entity seeks combat
+    const combat = entity.getComponent('combat');
+    if (combat && combat.shouldSeekCombat && combat.findNearbyEnemy()) {
+      behavior.changeState(new CombatState());
+      return;
     }
 
     // 村にいなければ最寄りの村へ向かう
