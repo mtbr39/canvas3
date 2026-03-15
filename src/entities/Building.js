@@ -4,6 +4,8 @@ import { Collider } from '../components/Collider.js';
 import { Tag } from '../components/Tag.js';
 import { ShapeRenderer } from '../components/ShapeRenderer.js';
 import { Inn } from '../components/Inn.js';
+import { Shop } from '../components/Shop.js';
+import Inventory from '../components/Inventory.js';
 import { colors } from '../data/Colors.js';
 
 export const BUILDING_CONFIGS = {
@@ -38,6 +40,11 @@ export function createBuilding(x, y, type) {
 
   if (type === 'inn') {
     entity.addComponent('inn', new Inn());
+  }
+
+  if (type === 'shop') {
+    entity.addComponent('inventory', new Inventory());
+    entity.addComponent('shop', new Shop());
   }
 
   return entity;

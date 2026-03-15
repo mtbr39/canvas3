@@ -105,6 +105,16 @@ export const ITEMS = {
     }
   },
 
+  // === 食料 ===
+  bread: {
+    name: 'パン',
+    category: 'food',
+    dropVisual: {
+      shape: 'rect',
+      fill: colors.brown01
+    }
+  },
+
   // === 素材 ===
   hide: {
     name: '普通の皮',
