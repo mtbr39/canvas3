@@ -15,6 +15,8 @@ export class Game {
     this.running = false;
     this.deltaTime = 0;
 
+    this.debug = true;
+
     this.resizeCanvas();
     window.addEventListener('resize', () => this.resizeCanvas());
   }
