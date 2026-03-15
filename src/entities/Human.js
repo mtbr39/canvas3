@@ -16,6 +16,8 @@ import Inventory from '../components/Inventory.js';
 import ItemCollector from '../components/ItemCollector.js';
 import { Resident } from '../components/Resident.js';
 import { Party } from '../components/Party.js';
+import { Nutrition } from '../components/Nutrition.js';
+import { Vitality } from '../components/Vitality.js';
 import { colors } from '../data/Colors.js';
 
 const HUMAN_STATS = {
@@ -60,7 +62,9 @@ export function createHuman(x, y) {
     .addComponent('inventory', new Inventory())
     .addComponent('itemCollector', new ItemCollector())
     .addComponent('resident', new Resident())
-    .addComponent('party', new Party());
+    .addComponent('party', new Party())
+    .addComponent('nutrition', new Nutrition())
+    .addComponent('vitality', new Vitality());
 
   const behavior = entity.getComponent('behavior');
   if (isAdventurer) {
