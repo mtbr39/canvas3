@@ -23,7 +23,31 @@ export class InfoRenderer {
 
     if (game.debug) {
       const behavior = this.entity.getComponent('behavior');
-      if (behavior && behavior.currentState) lines.push(behavior.currentState.constructor.name);
+      if (behavior && behavior.currentState) {
+        const state = behavior.currentState;
+        let stateLabel = state.constructor.name;
+        if (state.target) {
+          const targetTag = state.target.getComponent('tag');
+          const targetHealth = state.target.getComponent('health');
+          const deadLabel = targetHealth?.isDead ? '(dead)' : '';
+          stateLabel += ` → ${targetTag ? targetTag.tags.join(',') : '?'}${deadLabel}`;
+        } else if (state.constructor.name === 'CombatState') {
+          stateLabel += ' (no target)';
+        }
+        lines.push(stateLabel);
+        if (state.target) {
+          const targetHealth = state.target.getComponent('health');
+          if (!targetHealth?.isDead) {
+            const dist = Math.round(game.spatialQuery.getDistance(this.entity, state.target));
+            const combat = this.entity.getComponent('combat');
+            const range = combat ? Math.round(combat.getWeaponRange()) : '?';
+            const seek = combat ? (combat.shouldSeekCombat ? 'seek' : 'flee') : '?';
+            const movement = this.entity.getComponent('movement');
+            const moving = movement?.moving ? 'moving' : 'stopped';
+            lines.push(`${seek} dist:${dist} range:${range} ${moving}`);
+          }
+        }
+      }
 
       const nutrition = this.entity.getComponent('nutrition');
       if (nutrition) lines.push(`栄養 ${Math.floor(nutrition.current)}/${nutrition.max}`);
