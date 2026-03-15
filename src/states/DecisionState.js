@@ -55,9 +55,8 @@ export class DecisionState {
       if (fightingMember) {
         const combat = entity.getComponent('combat');
         if (combat) {
-          const allyTarget = fightingMember.getComponent('behavior').currentState.target;
-          const allyTargetHealth = allyTarget?.getComponent('health');
-          if (allyTarget && !allyTargetHealth?.isDead) {
+          const allyTarget = fightingMember.getComponent('behavior').currentState.getTarget();
+          if (allyTarget) {
             const state = new CombatState();
             state.target = allyTarget;
             behavior.changeState(state);

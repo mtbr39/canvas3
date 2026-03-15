@@ -20,6 +20,13 @@ export class CombatState {
     movement?.stop();
   }
 
+  getTarget() {
+    if (!this.target) return null;
+    const health = this.target.getComponent('health');
+    if (!health || health.isDead) return null;
+    return this.target;
+  }
+
   findTarget(entity) {
     const combat = entity.getComponent('combat');
     this.target = combat ? combat.findNearbyEnemy() : null;
@@ -41,30 +48,21 @@ export class CombatState {
       this.findTarget(entity);
     }
 
-    // No target - return to decision
-    if (!this.target) {
+    // No valid target - return to decision
+    const target = this.getTarget();
+    if (!target) {
       behavior.changeState(new DecisionState());
       return;
     }
 
-    // Check if target is still alive
-    const targetHealth = this.target.getComponent('health');
-    if (!targetHealth || targetHealth.isDead) {
-      this.target = null;
-      behavior.changeState(new DecisionState());
-      return;
-    }
-
-    // Get target position
-    const targetTransform = this.target.getComponent('transform');
+    const targetTransform = target.getComponent('transform');
     if (!targetTransform) {
-      this.target = null;
       behavior.changeState(new DecisionState());
       return;
     }
 
     // Calculate center-to-center distance
-    const centerDistance = game.spatialQuery.getDistance(entity, this.target);
+    const centerDistance = game.spatialQuery.getDistance(entity, target);
 
     if (!combat.shouldSeekCombat) {
       // Flee: move away from the enemy
@@ -84,7 +82,7 @@ export class CombatState {
     if (centerDistance <= weaponRange) {
       movement.stop();
       if (combat.canAttack()) {
-        combat.attack(this.target);
+        combat.attack(target);
       }
     } else {
       // Move closer to get within weapon range

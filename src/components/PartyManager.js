@@ -12,10 +12,18 @@ export class PartyManager {
 
   update() {
     const dt = this.game.deltaTime;
-    for (const party of this.parties.values()) {
+    for (const [partyId, party] of this.parties) {
+      this._removeDeadMembers(party);
       if (party.destination && party.formationCenter) {
         this._advanceFormationCenter(party, dt);
       }
+    }
+  }
+
+  _removeDeadMembers(party) {
+    const dead = [...party.members].filter(m => m.getComponent('health')?.isDead);
+    for (const member of dead) {
+      this._leave(member);
     }
   }
 

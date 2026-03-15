@@ -26,26 +26,22 @@ export class InfoRenderer {
       if (behavior && behavior.currentState) {
         const state = behavior.currentState;
         let stateLabel = state.constructor.name;
-        if (state.target) {
-          const targetTag = state.target.getComponent('tag');
-          const targetHealth = state.target.getComponent('health');
-          const deadLabel = targetHealth?.isDead ? '(dead)' : '';
-          stateLabel += ` → ${targetTag ? targetTag.tags.join(',') : '?'}${deadLabel}`;
+        const liveTarget = state.getTarget ? state.getTarget() : null;
+        if (liveTarget) {
+          const targetTag = liveTarget.getComponent('tag');
+          stateLabel += ` → ${targetTag ? targetTag.tags.join(',') : '?'}`;
         } else if (state.constructor.name === 'CombatState') {
           stateLabel += ' (no target)';
         }
-        lines.push(stateLabel);
-        if (state.target) {
-          const targetHealth = state.target.getComponent('health');
-          if (!targetHealth?.isDead) {
-            const dist = Math.round(game.spatialQuery.getDistance(this.entity, state.target));
-            const combat = this.entity.getComponent('combat');
-            const range = combat ? Math.round(combat.getWeaponRange()) : '?';
-            const seek = combat ? (combat.shouldSeekCombat ? 'seek' : 'flee') : '?';
-            const movement = this.entity.getComponent('movement');
-            const moving = movement?.moving ? 'moving' : 'stopped';
-            lines.push(`${seek} dist:${dist} range:${range} ${moving}`);
-          }
+lines.push(stateLabel);
+        if (liveTarget) {
+          const dist = Math.round(game.spatialQuery.getDistance(this.entity, liveTarget));
+          const combat = this.entity.getComponent('combat');
+          const range = combat ? Math.round(combat.getWeaponRange()) : '?';
+          const seek = combat ? (combat.shouldSeekCombat ? 'seek' : 'flee') : '?';
+          const movement = this.entity.getComponent('movement');
+          const moving = movement?.moving ? 'moving' : 'stopped';
+          lines.push(`${seek} dist:${dist} range:${range} ${moving}`);
         }
       }
 

@@ -1,0 +1,23 @@
+## 2つの設計上の問題があります。
+
+1. 死亡チェックの責任が分散している
+
+state.targetが生きているかどうかを、CombatState・DecisionState・InfoRendererそれぞれで個別にチェックしています。
+チェック漏れが今回のバグの原因でした。理想的にはtargetへのアクセスを一箇所に集約し、dead targetを自動的に無効と
+扱う仕組みがあれば漏れが起きません。
+
+2. パーティロジックが状態の内部（currentState.target）に直接アクセスしている
+
+DecisionStateが fightingMember.getComponent('behavior').currentState.target と書いているのは、
+Behaviorの内部状態に深く依存しています。ステートの実装が変わると壊れやすく、
+今回のようにtargetの検証も呼び出し側（DecisionState）の責任になってしまいます。CombatStateが getTarget() 
+のようなメソッドを持ち、dead targetの場合はnullを返す設計なら、呼び出し側は検証不要になります。
+
+## 改善
+
+変更のまとめ：
+
+CombatState.getTarget() を追加。dead/nullチェックを一元管理
+CombatState.update() はgetTarget()を使うよう簡略化
+DecisionState はcurrentState.targetに直接触れずgetTarget()経由
+InfoRenderer もgetTarget()を使い、dead判定ロジックが不要に
