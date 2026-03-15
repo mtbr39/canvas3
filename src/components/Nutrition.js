@@ -3,6 +3,7 @@ export class Nutrition {
     this.entity = null;
     this.max = 100;
     this.current = 100;
+    this.decayRate = 2; // per second
   }
 
   eat(amount) {
@@ -15,5 +16,9 @@ export class Nutrition {
 
   get ratio() {
     return this.current / this.max;
+  }
+
+  update() {
+    this.current = Math.max(this.current - this.decayRate * this.entity.game.deltaTime, 0);
   }
 }

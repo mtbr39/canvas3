@@ -11,7 +11,7 @@ import { Collider } from '../components/Collider.js';
 import { Tag } from '../components/Tag.js';
 import { InfoRenderer } from '../components/InfoRenderer.js';
 import { FloatingText } from '../components/FloatingText.js';
-import { createCombatInterruptCheck } from '../states/DecisionState.js';
+import { createInterruptCheck } from '../states/DecisionState.js';
 import Inventory from '../components/Inventory.js';
 import ItemCollector from '../components/ItemCollector.js';
 import { Resident } from '../components/Resident.js';
@@ -81,7 +81,7 @@ export function createHuman(x, y) {
     entity.addComponent('combat', Combat.createDefensive(HUMAN_STATS.detectionRange));
   }
 
-  behavior.addInterruptCheck(createCombatInterruptCheck());
+  behavior.addInterruptCheck(createInterruptCheck());
 
   return entity;
 }

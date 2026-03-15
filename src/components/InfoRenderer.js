@@ -21,8 +21,18 @@ export class InfoRenderer {
       `HP ${health.currentHealth}/${health.maxHealth}`,
     ];
 
+    const behavior = this.entity.getComponent('behavior');
+    const eatState = behavior?.currentState?.constructor.name === 'EatState'
+      ? behavior.currentState : null;
+    if (eatState) {
+      const label = eatState.phase === 'cooking' ? '調理中'
+        : eatState.phase === 'waiting' ? '仲間の調理を待っている'
+        : eatState.phase === 'eating'  ? '食事中'
+        : null;
+      if (label) lines.push(label);
+    }
+
     if (game.debug) {
-      const behavior = this.entity.getComponent('behavior');
       if (behavior && behavior.currentState) {
         const state = behavior.currentState;
         let stateLabel = state.constructor.name;

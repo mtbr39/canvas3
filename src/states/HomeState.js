@@ -1,14 +1,26 @@
+import { DecisionState } from './DecisionState.js';
+
+const HOME_DURATION = 5;
+
 export class HomeState {
   constructor() {
     this._phase = null;
     this._timer = 0;
+    this._stayTimer = HOME_DURATION;
   }
 
   enter(entity) {
+    this._stayTimer = HOME_DURATION;
     this._nextAction(entity);
   }
 
   update(entity) {
+    this._stayTimer -= entity.game.deltaTime;
+    if (this._stayTimer <= 0) {
+      entity.getComponent('behavior').changeState(new DecisionState());
+      return;
+    }
+
     if (this._phase === 'idle') {
       this._timer -= entity.game.deltaTime;
       if (this._timer <= 0) this._nextAction(entity);

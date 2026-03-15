@@ -5,21 +5,24 @@ import { CollectItemState } from './CollectItemState.js';
 import { PartyMoveToState } from './PartyMoveToState.js';
 import { SoloMoveToState } from './SoloMoveToState.js';
 import { HomeState } from './HomeState.js';
+import { EatState, GATHER_RADIUS } from './EatState.js';
+import { ITEMS } from '../data/Items.js';
 
-export function createCombatInterruptCheck() {
+export function createInterruptCheck() {
   return (entity, currentState) => {
-    // CombatState中は割り込まない
-    if (currentState?.constructor.name === 'CombatState') return null;
-
-    const combat = entity.getComponent('combat');
-    if (combat) {
-      const enemy = combat.findNearbyEnemy();
-      if (enemy) {
-        return new CombatState();
-      }
-    }
-    return null;
+    return _combatCheck(entity, currentState);
   };
+}
+
+function _combatCheck(entity, currentState) {
+  if (currentState?.constructor.name === 'CombatState') return null;
+
+  const combat = entity.getComponent('combat');
+  if (combat) {
+    const enemy = combat.findNearbyEnemy();
+    if (enemy) return new CombatState();
+  }
+  return null;
 }
 
 export class DecisionState {
@@ -28,7 +31,7 @@ export class DecisionState {
     this.decideNextState(entity);
   }
 
-  update(entity) {
+  update(_entity) {
     // 決定はenterで行うので、updateでは何もしない
   }
 
@@ -44,6 +47,51 @@ export class DecisionState {
     if (itemCollector && itemCollector.findNearbyItem()) {
       behavior.changeState(new CollectItemState());
       return;
+    }
+
+    // 食事判断
+    const nutrition = entity.getComponent('nutrition');
+    if (nutrition) {
+      const inventory = entity.getComponent('inventory');
+      const hasFood = inventory?.items.some(item => {
+        const info = item.getComponent('itemInfo');
+        return ITEMS[info?.itemType]?.category === 'food';
+      });
+
+      const isVeryHungry = nutrition.ratio < 0.2;
+      const isHungry = nutrition.ratio < 0.4;
+
+      // かなりお腹がすいた → 一人でも食べる
+      if (isVeryHungry && hasFood) {
+        behavior.changeState(new EatState());
+        return;
+      }
+
+      // パーティメンバーが調理中 → 必ず集まる（空腹度に関わらず）
+      if (party?.isInParty()) {
+        const cook = party.getMembers().find(m => {
+          const state = m.getComponent('behavior')?.currentState;
+          return m !== entity && state instanceof EatState && state.phase === 'cooking';
+        });
+        if (cook) {
+          const t = cook.getComponent('transform');
+          const members = party.getMembers().filter(m => m !== cook);
+          const myIndex = members.indexOf(entity);
+          const total = Math.max(members.length, 1);
+          const angle = (myIndex / total) * Math.PI * 2;
+          const radius = GATHER_RADIUS * 0.7;
+          const tx = t.x + Math.cos(angle) * radius;
+          const ty = t.y + Math.sin(angle) * radius;
+          behavior.changeState(new SoloMoveToState(tx, ty, new EatState()));
+          return;
+        }
+      }
+
+      // お腹がすいた → 食料があれば食べ始める（他が合流してくる）
+      if (isHungry && hasFood) {
+        behavior.changeState(new EatState());
+        return;
+      }
     }
 
     // パーティ内に戦闘中のメンバーがいる場合
@@ -100,7 +148,12 @@ export class DecisionState {
     // 家があれば帰宅する
     if (resident?.home) {
       const t = resident.home.getComponent('transform');
-      behavior.changeState(new SoloMoveToState(t.x, t.y, new HomeState()));
+      const c = resident.home.getComponent('collider');
+      const hw = c.shape.width / 2 * 0.8;
+      const hh = c.shape.height / 2 * 0.8;
+      const tx = t.x + (Math.random() - 0.5) * hw * 2;
+      const ty = t.y + (Math.random() - 0.5) * hh * 2;
+      behavior.changeState(new SoloMoveToState(tx, ty, new HomeState()));
       return;
     }
 

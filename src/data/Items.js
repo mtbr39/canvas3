@@ -109,9 +109,21 @@ export const ITEMS = {
   bread: {
     name: 'パン',
     category: 'food',
+    nutrition: 30,
     dropVisual: {
       shape: 'rect',
       fill: colors.brown01
+    }
+  },
+
+  meat: {
+    name: '普通の肉',
+    category: 'food',
+    nutrition: 40,
+    cookingTime: 5,
+    dropVisual: {
+      shape: 'rect',
+      fill: colors.pink01
     }
   },
 
@@ -122,15 +134,6 @@ export const ITEMS = {
     dropVisual: {
       shape: 'rect',
       fill: colors.brown01
-    }
-  },
-
-  meat: {
-    name: '普通の肉',
-    category: 'material',
-    dropVisual: {
-      shape: 'rect',
-      fill: colors.pink01
     }
   }
 };
