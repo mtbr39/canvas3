@@ -1,6 +1,6 @@
 import { createAttackHitbox } from '../entities/AttackHitbox.js';
 
-const FLEE_SPEED_MULTIPLIER = 1.5;
+const FLEE_SPEED_MULTIPLIER = 1;
 
 export class Combat {
   constructor(shouldSeekCombat = false, detectionRange) {

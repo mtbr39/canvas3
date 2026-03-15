@@ -4,6 +4,7 @@ export class Health {
     this.maxHealth = maxHealth;
     this.currentHealth = maxHealth;
     this.isDead = false;
+    this.removeOnDeath = true;
   }
 
   takeDamage(amount) {
@@ -35,6 +36,11 @@ export class Health {
     const loot = this.entity.getComponent('loot');
     if (loot) loot.drop();
 
-    this.entity.game.markEntityForRemoval(this.entity);
+    if (this.removeOnDeath) {
+      this.entity.game.markEntityForRemoval(this.entity);
+    } else {
+      const behavior = this.entity.getComponent('behavior');
+      if (behavior) behavior.disable();
+    }
   }
 }

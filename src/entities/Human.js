@@ -46,11 +46,14 @@ export function createHuman(x, y) {
   // 50% adventurer, 50% villager
   const isAdventurer = Math.random() < 0.5;
 
+  const health = new Health(100);
+  health.removeOnDeath = false;
+
   entity
     .addComponent('transform', new Transform(x, y))
     .addComponent('movement', new Movement(50))
     .addComponent('behavior', new Behavior(new IdleState()))
-    .addComponent('health', new Health(100))
+    .addComponent('health', health)
     .addComponent('collider', new Collider({ type: 'circle', radius: 25 }))
     .addComponent('shapeRenderer', new ShapeRenderer({
       stroke: isAdventurer ? colors.red01 : colors.gray02,

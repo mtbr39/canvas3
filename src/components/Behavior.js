@@ -4,6 +4,7 @@ export class Behavior {
     this.currentState = null;
     this._pendingState = initialState;
     this.interruptChecks = [];
+    this.enabled = true;
   }
 
   addInterruptCheck(checkFn) {
@@ -31,7 +32,17 @@ export class Behavior {
     }
   }
 
+  disable() {
+    this.enabled = false;
+  }
+
+  enable() {
+    this.enabled = true;
+  }
+
   update() {
+    if (!this.enabled) return;
+
     if (this._pendingState) {
       this.changeState(this._pendingState);
       this._pendingState = null;
