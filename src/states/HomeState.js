@@ -1,4 +1,4 @@
-import { DecisionState } from './DecisionState.js';
+import { DecisionState, checkEatCondition } from './DecisionState.js';
 
 const HOME_DURATION = 5;
 
@@ -16,6 +16,13 @@ export class HomeState {
 
   update(entity) {
     this._stayTimer -= entity.game.deltaTime;
+
+    const eatState = checkEatCondition(entity);
+    if (eatState) {
+      entity.getComponent('behavior').changeState(eatState);
+      return;
+    }
+
     if (this._stayTimer <= 0) {
       entity.getComponent('behavior').changeState(new DecisionState());
       return;

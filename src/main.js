@@ -11,7 +11,7 @@ const game = new Game(canvas);
 
 game.register('partyManager', new PartyManager());
 
-console.log('v0302');
+console.log('v0323');
 
 const WORLD_WIDTH = 8000;
 const WORLD_HEIGHT = 4000;

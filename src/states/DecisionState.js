@@ -8,6 +8,20 @@ import { HomeState } from './HomeState.js';
 import { EatState, GATHER_RADIUS } from './EatState.js';
 import { ITEMS } from '../data/Items.js';
 
+export function checkEatCondition(entity) {
+  const nutrition = entity.getComponent('nutrition');
+  if (!nutrition) return null;
+
+  const inventory = entity.getComponent('inventory');
+  const hasFood = inventory?.items.some(item => {
+    const info = item.getComponent('itemInfo');
+    return ITEMS[info?.itemType]?.category === 'food';
+  });
+
+  if (hasFood && nutrition.ratio < 0.4) return new EatState();
+  return null;
+}
+
 export function createInterruptCheck() {
   return (entity, currentState) => {
     return _combatCheck(entity, currentState);
@@ -50,46 +64,28 @@ export class DecisionState {
     }
 
     // 食事判断
-    const nutrition = entity.getComponent('nutrition');
-    if (nutrition) {
-      const inventory = entity.getComponent('inventory');
-      const hasFood = inventory?.items.some(item => {
-        const info = item.getComponent('itemInfo');
-        return ITEMS[info?.itemType]?.category === 'food';
+    const eatState = checkEatCondition(entity);
+    if (eatState) {
+      behavior.changeState(eatState);
+      return;
+    }
+
+    // パーティメンバーが調理中 → 必ず集まる（空腹度に関わらず）
+    if (party?.isInParty()) {
+      const cook = party.getMembers().find(m => {
+        const state = m.getComponent('behavior')?.currentState;
+        return m !== entity && state instanceof EatState && state.phase === 'cooking';
       });
-
-      const isVeryHungry = nutrition.ratio < 0.2;
-      const isHungry = nutrition.ratio < 0.4;
-
-      // かなりお腹がすいた → 一人でも食べる
-      if (isVeryHungry && hasFood) {
-        behavior.changeState(new EatState());
-        return;
-      }
-
-      // パーティメンバーが調理中 → 必ず集まる（空腹度に関わらず）
-      if (party?.isInParty()) {
-        const cook = party.getMembers().find(m => {
-          const state = m.getComponent('behavior')?.currentState;
-          return m !== entity && state instanceof EatState && state.phase === 'cooking';
-        });
-        if (cook) {
-          const t = cook.getComponent('transform');
-          const members = party.getMembers().filter(m => m !== cook);
-          const myIndex = members.indexOf(entity);
-          const total = Math.max(members.length, 1);
-          const angle = (myIndex / total) * Math.PI * 2;
-          const radius = GATHER_RADIUS * 0.7;
-          const tx = t.x + Math.cos(angle) * radius;
-          const ty = t.y + Math.sin(angle) * radius;
-          behavior.changeState(new SoloMoveToState(tx, ty, new EatState()));
-          return;
-        }
-      }
-
-      // お腹がすいた → 食料があれば食べ始める（他が合流してくる）
-      if (isHungry && hasFood) {
-        behavior.changeState(new EatState());
+      if (cook) {
+        const t = cook.getComponent('transform');
+        const members = party.getMembers().filter(m => m !== cook);
+        const myIndex = members.indexOf(entity);
+        const total = Math.max(members.length, 1);
+        const angle = (myIndex / total) * Math.PI * 2;
+        const radius = GATHER_RADIUS * 0.7;
+        const tx = t.x + Math.cos(angle) * radius;
+        const ty = t.y + Math.sin(angle) * radius;
+        behavior.changeState(new SoloMoveToState(tx, ty, new EatState()));
         return;
       }
     }
