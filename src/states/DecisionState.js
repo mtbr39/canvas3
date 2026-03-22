@@ -7,6 +7,9 @@ import { SoloMoveToState } from './SoloMoveToState.js';
 import { HomeState } from './HomeState.js';
 import { EatState, GATHER_RADIUS } from './EatState.js';
 import { ITEMS } from '../data/Items.js';
+import { debug } from '../core/debug.js';
+
+const _eatLogCooldown = new Map();
 
 export function checkEatCondition(entity) {
   const nutrition = entity.getComponent('nutrition');
@@ -19,6 +22,18 @@ export function checkEatCondition(entity) {
   });
 
   if (hasFood && nutrition.ratio < 0.4) return new EatState();
+
+  // 3秒に1回だけログ
+  const now = Date.now();
+  if ((now - (_eatLogCooldown.get(entity.id) ?? 0)) > 3000) {
+    _eatLogCooldown.set(entity.id, now);
+    if (hasFood) {
+      debug.log(`[checkEat #${entity.id}] 食料あり ratio=${nutrition.ratio.toFixed(2)} (空腹でない)`);
+    } else if (nutrition.ratio < 0.4) {
+      debug.log(`[checkEat #${entity.id}] 空腹だが食料なし ratio=${nutrition.ratio.toFixed(2)}`);
+    }
+  }
+
   return null;
 }
 

@@ -3,22 +3,23 @@ import { Camera } from './Camera.js';
 import { SpatialQuery } from './SpatialQuery.js';
 
 export class Game {
-  constructor(canvas) {
+  constructor(canvas = null) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
-    this.camera = new Camera(canvas);
-    this.graphics = new Graphics(this.ctx, this.camera);
     this.entities = [];
     this.registry = new Map();
     this.spatialQuery = new SpatialQuery(this);
     this.lastTime = 0;
     this.running = false;
     this.deltaTime = 0;
+    this.debug = false;
 
-    this.debug = true;
-
-    this.resizeCanvas();
-    window.addEventListener('resize', () => this.resizeCanvas());
+    if (canvas) {
+      this.ctx = canvas.getContext('2d');
+      this.camera = new Camera(canvas);
+      this.graphics = new Graphics(this.ctx, this.camera);
+      this.resizeCanvas();
+      window.addEventListener('resize', () => this.resizeCanvas());
+    }
   }
 
   resizeCanvas() {

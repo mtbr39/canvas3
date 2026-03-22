@@ -1,5 +1,6 @@
 import { DecisionState } from './DecisionState.js';
 import { ITEMS } from '../data/Items.js';
+import { debug } from '../core/debug.js';
 
 export const GATHER_RADIUS = 120;
 const EATING_TIME = 30;
@@ -10,6 +11,7 @@ export class EatState {
     this.phase = null; // 'cooking' | 'eating' | 'waiting'
     this.timer = 0;
     this._foodItem = null;
+    this._nutritionAmount = 0;
   }
 
   enter(entity) {
@@ -33,6 +35,8 @@ export class EatState {
       this.phase = 'waiting';
       this.timer = WAIT_TIMEOUT;
     }
+    const foodName = this._foodItem?.getComponent('itemInfo')?.itemType ?? 'なし';
+    debug.log(`[EatState #${entity.id}] enter: phase=${this.phase} food=${foodName}`);
   }
 
   update(entity) {
@@ -44,6 +48,10 @@ export class EatState {
         entity.getComponent('behavior').changeState(new DecisionState());
       }
       return;
+    }
+
+    if (this.phase === 'eating') {
+      this._serveWaiting(entity);
     }
 
     this.timer -= entity.game.deltaTime;
@@ -70,26 +78,41 @@ export class EatState {
     const inventory = entity.getComponent('inventory');
     const itemData = ITEMS[this._foodItem.getComponent('itemInfo').itemType];
     inventory.remove(this._foodItem);
+    entity.game.markEntityForRemoval(this._foodItem);
+
+    this._nutritionAmount = itemData.nutrition ?? 30;
 
     // 自分も食べる
-    entity.getComponent('nutrition')?.eat(itemData.nutrition ?? 30);
+    entity.getComponent('nutrition')?.eat(this._nutritionAmount);
 
-    // 近くのwaitingメンバーに配る
-    const transform = entity.getComponent('transform');
+    this._serveWaiting(entity);
+  }
+
+  // 近くで待機中のパーティメンバーに料理を配膳する。
+  // 調理完成時(_serveMeal)と、食事中(eating)の毎フレームに呼ばれる。
+  // → 遅れて到着したメンバーも、自分が食べ終わる前に来れば受け取れる。
+  _serveWaiting(entity) {
+    if (!this._nutritionAmount) return;
     const party = entity.getComponent('party');
     if (!party?.isInParty()) return;
+
+    const transform = entity.getComponent('transform');
+    const rangeSq = GATHER_RADIUS * 3 * GATHER_RADIUS * 3; // 集合先と同じ距離でチェック
 
     for (const member of party.getMembers()) {
       if (member === entity) continue;
       const memberState = member.getComponent('behavior')?.currentState;
+      // waiting(料理を待っている)状態のメンバーだけが対象
       if (!(memberState instanceof EatState) || memberState.phase !== 'waiting') continue;
 
+      // 範囲外なら配膳しない
       const mt = member.getComponent('transform');
       const dx = mt.x - transform.x;
       const dy = mt.y - transform.y;
-      if (dx * dx + dy * dy > GATHER_RADIUS * GATHER_RADIUS) continue;
+      if (dx * dx + dy * dy > rangeSq) continue;
 
-      memberState.served(member, itemData.nutrition ?? 30);
+      debug.log(`[EatState #${entity.id}] → #${member.id} に配膳`);
+      memberState.served(member, this._nutritionAmount);
     }
   }
 
@@ -100,6 +123,7 @@ export class EatState {
       if (inventory?.items.includes(this._foodItem)) {
         const itemData = ITEMS[this._foodItem.getComponent('itemInfo').itemType];
         inventory.remove(this._foodItem);
+        entity.game.markEntityForRemoval(this._foodItem);
         entity.getComponent('nutrition')?.eat(itemData.nutrition ?? 30);
       }
     }
