@@ -1,6 +1,7 @@
 export class InfoRenderer {
   constructor() {
     this.entity = null;
+    this.showNutrition = true;
   }
 
   render() {
@@ -55,6 +56,12 @@ lines.push(stateLabel);
         }
       }
 
+      const nutrition = this.entity.getComponent('nutrition');
+      if (nutrition) lines.push(`栄養 ${Math.floor(nutrition.current)}/${nutrition.max}`);
+
+      const vitality = this.entity.getComponent('vitality');
+      if (vitality) lines.push(`気力 ${Math.floor(vitality.current)}/${vitality.max}`);
+    } else if (this.showNutrition) {
       const nutrition = this.entity.getComponent('nutrition');
       if (nutrition) lines.push(`栄養 ${Math.floor(nutrition.current)}/${nutrition.max}`);
 

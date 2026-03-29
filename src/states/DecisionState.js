@@ -49,7 +49,7 @@ function _combatCheck(entity, currentState) {
   const combat = entity.getComponent('combat');
   if (combat) {
     const enemy = combat.findNearbyEnemy();
-    if (enemy) return new CombatState();
+    if (enemy) return new CombatState(currentState);
   }
   return null;
 }

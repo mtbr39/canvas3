@@ -1,7 +1,8 @@
 import { DecisionState } from './DecisionState.js';
 
 export class CombatState {
-  constructor() {
+  constructor(returnState = null) {
+    this.returnState = returnState;
     this.target = null;
     this.checkInterval = 0.5;
     this.checkTimer = 0;
@@ -51,13 +52,13 @@ export class CombatState {
     // No valid target - return to decision
     const target = this.getTarget();
     if (!target) {
-      behavior.changeState(new DecisionState());
+      behavior.changeState(this.returnState ?? new DecisionState());
       return;
     }
 
     const targetTransform = target.getComponent('transform');
     if (!targetTransform) {
-      behavior.changeState(new DecisionState());
+      behavior.changeState(this.returnState ?? new DecisionState());
       return;
     }
 
