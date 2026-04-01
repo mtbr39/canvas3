@@ -56,8 +56,7 @@ export function createHuman(x, y) {
     .addComponent('health', health)
     .addComponent('collider', new Collider({ type: 'circle', radius: 25 }))
     .addComponent('shapeRenderer', new ShapeRenderer({
-      stroke: isAdventurer ? colors.red01 : colors.gray02,
-      strokeWidth: 1
+      fill: colors.base01,
     }))
     .addComponent('tag', new Tag('human'))
     .addComponent('infoRenderer', new InfoRenderer())

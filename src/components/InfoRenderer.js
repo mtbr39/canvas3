@@ -6,8 +6,18 @@ export class InfoRenderer {
     this.showNutrition = true;
   }
 
+  isCameraCloseEnough() {
+    return this.entity.game.camera.zoom >= 1.0;
+  }
+
+  isVisible() {
+    return this.isCameraCloseEnough();
+  }
+
   render() {
+    if (!this.isVisible()) return;
     const game = this.entity.game;
+
     const transform = this.entity.getComponent('transform');
     const health = this.entity.getComponent('health');
     if (!transform || !health) return;

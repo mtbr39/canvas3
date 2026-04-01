@@ -101,6 +101,41 @@ class CircleRenderer {
 }
 ```
 
+### 4. ロジックへの命名
+
+処理の意図が伝わらないロジックはメソッドに切り出して名前をつける。
+
+- 名前で「何をしているか」が伝わるようにする
+- 差し替えが想定される部分はさらに別メソッドに切り出す
+
+**良い例:**
+```javascript
+class InfoRenderer {
+  isCameraCloseEnough() {
+    return this.entity.game.camera.zoom >= 1.5;
+  }
+
+  isVisible() {
+    return this.isCameraCloseEnough();
+  }
+
+  render() {
+    if (!this.isVisible()) return;
+    // 描画処理
+  }
+}
+```
+
+**悪い例:**
+```javascript
+class InfoRenderer {
+  render() {
+    if (game.camera.zoom < 1.5) return;  // 何のための条件かわからない
+    // 描画処理
+  }
+}
+```
+
 ## Graphicsクラスの拡張
 
 新しい描画機能が必要な場合は、Graphicsクラスにメソッドを追加する。
