@@ -1,4 +1,5 @@
 import { ITEMS } from '../data/Items.js';
+import { colors } from '../data/Colors.js';
 
 export class ItemInfoRenderer {
   constructor() {
@@ -27,7 +28,7 @@ export class ItemInfoRenderer {
       transform.y + offsetY + 8,
       itemData.name,
       {
-        fill: '#000000',
+        fill: colors.textColor,
         fontSize: 10,
         fontSizeScaleWithZoom: true
       }

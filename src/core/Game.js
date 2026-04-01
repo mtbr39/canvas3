@@ -1,6 +1,7 @@
 import { Graphics } from './Graphics.js';
 import { Camera } from './Camera.js';
 import { SpatialQuery } from './SpatialQuery.js';
+import { colors } from '../data/Colors.js';
 
 export class Game {
   constructor(canvas = null) {
@@ -28,6 +29,7 @@ export class Game {
     this.canvas.height = window.innerHeight * dpr;
     this.canvas.style.width = window.innerWidth + 'px';
     this.canvas.style.height = window.innerHeight + 'px';
+    this.canvas.style.backgroundColor = colors.backgroundColor;
     this.ctx.scale(dpr, dpr);
     this.graphics.updateScale();
   }

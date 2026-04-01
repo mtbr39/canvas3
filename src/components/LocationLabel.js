@@ -1,3 +1,5 @@
+import { colors } from '../data/Colors.js';
+
 export class LocationLabel {
   constructor() {
     this.entity = null;
@@ -18,7 +20,7 @@ export class LocationLabel {
       transform.y - halfH - 8,
       this.name,
       {
-        fill: '#000000',
+        fill: colors.textColor,
         fontSize: 14,
         align: 'left',
         baseline: 'bottom'

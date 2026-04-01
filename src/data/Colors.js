@@ -3,6 +3,11 @@
 // 同じ色を複数のコンポーネントやエンティティから参照してよい。
 
 export const colors = {
+  // === UI ===
+  backgroundColor: '#306950',
+  textColor: '#DEF8CE',
+
+
   // === Blue ===
   blue01: '#5555cc',
   blue02: 'rgba(180, 180, 220, 0.3)',

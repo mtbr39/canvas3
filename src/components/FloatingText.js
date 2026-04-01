@@ -1,3 +1,5 @@
+import { colors } from '../data/Colors.js';
+
 export class FloatingText {
   constructor() {
     this.entity = null;
@@ -41,7 +43,8 @@ export class FloatingText {
       transform.y - offsetY - 20,
       this.text,
       {
-        fill: `rgba(0, 0, 0, ${alpha})`,
+        fill: colors.textColor.replace(/^#(..)(..)(..)$/, (_, r, g, b) =>
+          `rgba(${parseInt(r,16)}, ${parseInt(g,16)}, ${parseInt(b,16)}, ${alpha})`),
         fontSize: 14
       }
     );

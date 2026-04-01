@@ -1,3 +1,5 @@
+import { colors } from '../data/Colors.js';
+
 export class InfoRenderer {
   constructor() {
     this.entity = null;
@@ -75,7 +77,7 @@ lines.push(stateLabel);
         transform.x,
         transform.y + offsetY + 10 + i * lineHeight,
         line,
-        { fill: '#000000', fontSize: 12 }
+        { fill: colors.textColor, fontSize: 12 }
       );
     });
   }
