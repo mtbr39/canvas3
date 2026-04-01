@@ -6,8 +6,13 @@ import { PartyMoveToState } from './PartyMoveToState.js';
 import { SoloMoveToState } from './SoloMoveToState.js';
 import { HomeState } from './HomeState.js';
 import { EatState, GATHER_RADIUS } from './EatState.js';
+import { BuyState } from './BuyState.js';
 import { ITEMS } from '../data/Items.js';
 import { debug } from '../core/debug.js';
+
+const EAT_ANYWHERE_THRESHOLD = 0.1;  // この値以下ならどこでも食べる
+const EAT_AT_HOME_THRESHOLD = 0.4;  // この値以下なら家にいるときに食べる
+const BUY_THRESHOLD = 0.6;          // この値以下で食料を買いに行く
 
 const _eatLogCooldown = new Map();
 
@@ -21,7 +26,10 @@ export function checkEatCondition(entity) {
     return ITEMS[info?.itemType]?.categories?.includes('food');
   });
 
-  if (hasFood && nutrition.ratio < 0.4) return new EatState();
+  if (hasFood && nutrition.ratio < EAT_ANYWHERE_THRESHOLD) return new EatState();
+
+  const isAtHome = entity.getComponent('behavior')?.currentState instanceof HomeState;
+  if (hasFood && isAtHome && nutrition.ratio < EAT_AT_HOME_THRESHOLD) return new EatState();
 
   // 3秒に1回だけログ
   const now = Date.now();
@@ -83,6 +91,20 @@ export class DecisionState {
     if (eatState) {
       behavior.changeState(eatState);
       return;
+    }
+
+    // 食料購入判断：栄養60以下で手持ちに食料がなければ買いに行く
+    const nutrition = entity.getComponent('nutrition');
+    const inventory = entity.getComponent('inventory');
+    if (nutrition && nutrition.ratio <= BUY_THRESHOLD) {
+      const hasFood = inventory?.items.some(item => {
+        const info = item.getComponent('itemInfo');
+        return ITEMS[info?.itemType]?.categories?.includes('food');
+      });
+      if (!hasFood) {
+        behavior.changeState(BuyState.category('food'));
+        return;
+      }
     }
 
     // パーティメンバーが調理中 → 必ず集まる（空腹度に関わらず）

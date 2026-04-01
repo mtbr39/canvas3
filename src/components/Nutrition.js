@@ -2,8 +2,8 @@ export class Nutrition {
   constructor() {
     this.entity = null;
     this.max = 100;
-    this.current = 100;
-    this.decayRate = 2; // per second
+    this.current = Math.random() * this.max;
+    this.decayRate = 0.5; // per second
   }
 
   eat(amount) {
