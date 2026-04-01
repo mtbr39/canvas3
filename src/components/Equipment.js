@@ -1,4 +1,4 @@
-import { ITEMS, DEFAULT_ITEM } from '../data/Items.js';
+import { ITEMS } from '../data/Items.js';
 
 export class Equipment {
   constructor(initialItemId = null) {
@@ -7,15 +7,12 @@ export class Equipment {
   }
 
   getItem() {
-    if (!this.itemId) {
-      return DEFAULT_ITEM;
-    }
-    return ITEMS[this.itemId] || DEFAULT_ITEM;
+    return ITEMS[this.itemId] ?? ITEMS.bare_hands;
   }
 
   getWeapon() {
     const item = this.getItem();
-    return item.categories?.includes('weapon') ? item : DEFAULT_ITEM;
+    return item.categories?.includes('weapon') ? item : ITEMS.bare_hands;
   }
 
   equip(itemId) {

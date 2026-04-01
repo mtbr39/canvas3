@@ -1,5 +1,47 @@
 # Canvas3 プロジェクト実装方針
 
+## 設計思想
+
+全エンティティは同じ構造（欲求・アクション・パラメータ・コンポーネント）を持ち、同じルールで動く。プレイヤーとNPCに別の仕組みは用意しない。
+
+振る舞いの違いは、エンティティに何が備わっているか（所持品・パラメータ・状態）と、その時の状況によって生まれる。特定の振る舞いを直接コードするのではなく、**汎用的なシステムの組み合わせの結果として振る舞いが生まれる**ことを目指す。
+
+**悪い例（振る舞いを直接コードする）:**
+```javascript
+class SoldierAI {
+  update() {
+    this.findEnemy();   // 兵士だから戦う
+    this.attackEnemy();
+  }
+}
+```
+
+**良い例（状況とコンポーネントの組み合わせで振る舞いが決まる）:**
+```javascript
+// DecisionState: 全エンティティ共通の意思決定
+decideNextState(entity) {
+  // combatコンポーネントを持っていて、敵が近くにいれば戦う
+  const combat = entity.getComponent('combat');
+  if (combat && combat.shouldSeekCombat && combat.findNearbyEnemy()) {
+    behavior.changeState(new CombatState());
+    return;
+  }
+
+  // nutritionコンポーネントを持っていて、空腹で食料があれば食べる
+  const eatState = checkEatCondition(entity);
+  if (eatState) {
+    behavior.changeState(eatState);
+    return;
+  }
+
+  // ...
+}
+```
+
+「戦士」も「一般人」も同じ `DecisionState` を通る。戦士が戦うのは `combat` コンポーネントを持ち `shouldSeekCombat` が true だからであり、一般人が戦わないのはそのコンポーネントを持っていないからに過ぎない。
+
+---
+
 ## コンポーネント設計原則
 
 ### 1. コンポーネントの独立性

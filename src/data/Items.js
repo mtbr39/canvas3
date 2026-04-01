@@ -70,6 +70,19 @@ export const ITEMS = {
     }
   },
 
+  bare_hands: {
+    name: '素手',
+    categories: ['weapon'],
+    attackType: 'melee',
+    damage: 5,
+    cooldown: 1.0,
+    hitbox: {
+      radius: 20,
+      distance: 30,
+      duration: 0.15
+    }
+  },
+
   // === モンスター用武器 ===
   claw: {
     name: '爪',
@@ -138,15 +151,3 @@ export const ITEMS = {
   }
 };
 
-export const DEFAULT_ITEM = {
-  name: '素手',
-  categories: ['weapon'],
-  attackType: 'melee',
-  damage: 5,
-  cooldown: 1.0,
-  hitbox: {
-    radius: 20,
-    distance: 30,
-    duration: 0.15
-  }
-};
