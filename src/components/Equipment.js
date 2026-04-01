@@ -15,7 +15,7 @@ export class Equipment {
 
   getWeapon() {
     const item = this.getItem();
-    return item.category === 'weapon' ? item : DEFAULT_ITEM;
+    return item.categories?.includes('weapon') ? item : DEFAULT_ITEM;
   }
 
   equip(itemId) {

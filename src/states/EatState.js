@@ -136,7 +136,7 @@ export class EatState {
     if (!inventory) return null;
     return inventory.items.find(item => {
       const info = item.getComponent('itemInfo');
-      return ITEMS[info?.itemType]?.category === 'food';
+      return ITEMS[info?.itemType]?.categories?.includes('food');
     }) ?? null;
   }
 }

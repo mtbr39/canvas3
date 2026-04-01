@@ -18,7 +18,7 @@ export function checkEatCondition(entity) {
   const inventory = entity.getComponent('inventory');
   const hasFood = inventory?.items.some(item => {
     const info = item.getComponent('itemInfo');
-    return ITEMS[info?.itemType]?.category === 'food';
+    return ITEMS[info?.itemType]?.categories?.includes('food');
   });
 
   if (hasFood && nutrition.ratio < 0.4) return new EatState();

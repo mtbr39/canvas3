@@ -4,7 +4,7 @@ export const ITEMS = {
   // === 人間用武器 ===
   sword: {
     name: '剣',
-    category: 'weapon',
+    categories: ['weapon'],
     attackType: 'melee',
     damage: 15,
     cooldown: 1.0,
@@ -21,7 +21,7 @@ export const ITEMS = {
 
   axe: {
     name: '斧',
-    category: 'weapon',
+    categories: ['weapon'],
     attackType: 'melee',
     damage: 25,
     cooldown: 1.5,
@@ -38,7 +38,7 @@ export const ITEMS = {
 
   bow: {
     name: '弓',
-    category: 'weapon',
+    categories: ['weapon'],
     attackType: 'ranged',
     damage: 12,
     cooldown: 1.2,
@@ -55,7 +55,7 @@ export const ITEMS = {
 
   staff: {
     name: '杖',
-    category: 'weapon',
+    categories: ['weapon'],
     attackType: 'ranged',
     damage: 20,
     cooldown: 2.0,
@@ -73,7 +73,7 @@ export const ITEMS = {
   // === モンスター用武器 ===
   claw: {
     name: '爪',
-    category: 'weapon',
+    categories: ['weapon'],
     attackType: 'melee',
     damage: 8,
     cooldown: 0.8,
@@ -90,7 +90,7 @@ export const ITEMS = {
 
   bite: {
     name: '牙',
-    category: 'weapon',
+    categories: ['weapon'],
     attackType: 'melee',
     damage: 12,
     cooldown: 1.0,
@@ -108,7 +108,7 @@ export const ITEMS = {
   // === 食料 ===
   bread: {
     name: 'パン',
-    category: 'food',
+    categories: ['food'],
     nutrition: 30,
     dropVisual: {
       shape: 'rect',
@@ -118,7 +118,7 @@ export const ITEMS = {
 
   meat: {
     name: '普通の肉',
-    category: 'food',
+    categories: ['food'],
     nutrition: 40,
     cookingTime: 5,
     dropVisual: {
@@ -130,7 +130,7 @@ export const ITEMS = {
   // === 素材 ===
   hide: {
     name: '普通の皮',
-    category: 'material',
+    categories: ['material'],
     dropVisual: {
       shape: 'rect',
       fill: colors.brown01
@@ -140,7 +140,7 @@ export const ITEMS = {
 
 export const DEFAULT_ITEM = {
   name: '素手',
-  category: 'weapon',
+  categories: ['weapon'],
   attackType: 'melee',
   damage: 5,
   cooldown: 1.0,
