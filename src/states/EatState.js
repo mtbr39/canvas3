@@ -3,7 +3,7 @@ import { ITEMS } from '../data/Items.js';
 import { debug } from '../core/debug.js';
 
 export const GATHER_RADIUS = 120;
-const EATING_TIME = 30;
+const EATING_TIME = 10;
 const WAIT_TIMEOUT = 15;
 
 export class EatState {

@@ -122,7 +122,7 @@ export const ITEMS = {
   bread: {
     name: 'パン',
     categories: ['food'],
-    nutrition: 30,
+    nutrition: 50,
     dropVisual: {
       shape: 'rect',
       fill: colors.brown01

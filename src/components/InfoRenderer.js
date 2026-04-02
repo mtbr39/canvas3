@@ -35,6 +35,10 @@ export class InfoRenderer {
     ];
 
     const behavior = this.entity.getComponent('behavior');
+    if (behavior?.currentState) {
+      lines.push(behavior.currentState.constructor.name);
+    }
+
     const eatState = behavior?.currentState?.constructor.name === 'EatState'
       ? behavior.currentState : null;
     if (eatState) {

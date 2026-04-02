@@ -1,5 +1,3 @@
-import { FollowOwner } from './FollowOwner.js';
-
 class ItemCollector {
   constructor() {
     this.entity = null;
@@ -46,23 +44,6 @@ class ItemCollector {
 
     if (inventory.add(itemEntity)) {
       itemInfo.setOwner(this.entity);
-
-      const followOwner = itemEntity.getComponent('followOwner');
-      if (!followOwner) {
-        itemEntity.addComponent('followOwner', new FollowOwner());
-      }
-
-      const itemIndex = inventory.items.indexOf(itemEntity);
-      const cols = 2;
-      const rowIndex = Math.floor(itemIndex / cols);
-      const colIndex = itemIndex % cols;
-
-      const rowDistance = 30 + rowIndex * 25;
-      const colSpacing = 20;
-      const colOffset = (colIndex - (cols - 1) / 2) * colSpacing;
-
-      itemEntity.getComponent('followOwner').setOwner(this.entity, rowDistance, colOffset);
-
       return true;
     }
     return false;

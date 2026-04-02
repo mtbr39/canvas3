@@ -3,7 +3,7 @@ export class Nutrition {
     this.entity = null;
     this.max = 100;
     this.current = Math.random() * this.max;
-    this.decayRate = 0.5; // per second
+    this.decayRate = 0.1; // per second
   }
 
   eat(amount) {

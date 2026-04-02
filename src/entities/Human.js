@@ -14,6 +14,7 @@ import { FloatingText } from '../components/FloatingText.js';
 import { createInterruptCheck } from '../states/DecisionState.js';
 import Inventory from '../components/Inventory.js';
 import ItemCollector from '../components/ItemCollector.js';
+import { CarriedItemsFollower } from '../components/CarriedItemsFollower.js';
 import { Resident } from '../components/Resident.js';
 import { Party } from '../components/Party.js';
 import { Nutrition } from '../components/Nutrition.js';
@@ -63,6 +64,7 @@ export function createHuman(x, y) {
     .addComponent('floatingText', new FloatingText())
     .addComponent('inventory', new Inventory())
     .addComponent('itemCollector', new ItemCollector())
+    .addComponent('carriedItemsFollower', new CarriedItemsFollower())
     .addComponent('resident', new Resident())
     .addComponent('party', new Party())
     .addComponent('nutrition', new Nutrition())
