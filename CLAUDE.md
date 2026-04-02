@@ -143,7 +143,25 @@ class CircleRenderer {
 }
 ```
 
-### 4. ロジックへの命名
+### 4. データと表現の分離
+
+データを持つコンポーネントは、その表現方法を知らなくていい。`InfoRenderer` が `health` を読むだけで `health` は描画を知らないのと同じ原則。
+
+2つの関心事を同期させたいとき、どちらかに依存を持たせるのではなく、**第三のコンポーネントが橋渡しする**。
+
+**例: インベントリとアイテム追従の分離**
+
+```
+Inventory（データ）──(読むだけ)── CarriedItemsFollower ──(操作)── FollowOwner
+```
+
+- `Inventory` はアイテムの追加・削除のみ担う
+- `CarriedItemsFollower` が毎フレーム inventory を見て FollowOwner を同期する
+- 表現を変えたい場合（例：ウィンドウ表示）は `CarriedItemsFollower` を差し替えるだけ。`Inventory` も `FollowOwner` も触らない
+
+**ルール: 他のコンポーネントは `Inventory.add/remove` だけを使う。`FollowOwner` や `CarriedItemsFollower` を直接操作しない。**
+
+### 5. ロジックへの命名
 
 処理の意図が伝わらないロジックはメソッドに切り出して名前をつける。
 
