@@ -93,7 +93,21 @@ export class Shop {
     } else {
       coinInfo.quantity -= amount;
     }
+
+    this._addCoinsToShop(amount);
     return true;
+  }
+
+  _addCoinsToShop(amount) {
+    const shopInventory = this.entity.getComponent('inventory');
+    const transform = this.entity.getComponent('transform');
+    if (!shopInventory || !transform) return;
+
+    const coin = createItem(transform.x, transform.y, 'coin');
+    coin.getComponent('itemInfo').quantity = amount;
+    coin.getComponent('itemInfo').setOwner(this.entity.id);
+    this.entity.game.addEntity(coin);
+    shopInventory.add(coin);
   }
 
   sell(itemEntity, price, sellerInventory) {

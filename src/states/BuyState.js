@@ -21,12 +21,6 @@ export class BuyState {
   enter(entity) {
     entity.getComponent('party')?.detach();
 
-    if (!this._hasCoins(entity)) {
-      entity.getComponent('party')?.reattach();
-      entity.getComponent('behavior').changeState(new DecisionState());
-      return;
-    }
-
     this._shopEntity = this._findNearestShopWith(entity);
 
     if (!this._shopEntity) {
@@ -80,14 +74,6 @@ export class BuyState {
       x: t.x + (Math.random() - 0.5) * hw * 2,
       y: t.y + (Math.random() - 0.5) * hh * 2,
     };
-  }
-
-  _hasCoins(entity) {
-    const inventory = entity.getComponent('inventory');
-    if (!inventory) return false;
-    return inventory.items.some(
-      e => e.getComponent('itemInfo')?.itemType === 'coin'
-    );
   }
 
   _findNearestShopWith(entity) {

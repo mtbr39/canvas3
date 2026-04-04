@@ -23,7 +23,7 @@ export class ItemInfoRenderer {
         : collider.shape.height / 2;
     }
 
-    const label = itemInfo.quantity > 1 ? `${itemData.name} x${itemInfo.quantity}` : itemData.name;
+    const label = itemInfo.quantity > 1 ? `${itemData.name} ${itemInfo.quantity}` : itemData.name;
     game.graphics.text(
       transform.x,
       transform.y + offsetY + 8,

@@ -101,7 +101,10 @@ export class DecisionState {
         const info = item.getComponent('itemInfo');
         return ITEMS[info?.itemType]?.categories?.includes('food');
       });
-      if (!hasFood) {
+      const hasCoins = inventory?.items.some(item =>
+        item.getComponent('itemInfo')?.itemType === 'coin'
+      );
+      if (!hasFood && hasCoins) {
         behavior.changeState(BuyState.category('food'));
         return;
       }
