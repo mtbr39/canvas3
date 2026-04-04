@@ -1,6 +1,6 @@
 import { DecisionState, checkEatCondition } from './DecisionState.js';
 
-const HOME_DURATION = 5;
+const HOME_DURATION = 30;
 
 export class HomeState {
   constructor() {
@@ -38,7 +38,7 @@ export class HomeState {
   }
 
   _nextAction(entity) {
-    if (Math.random() < 0.5) {
+    if (Math.random() < 0.8) {
       this._phase = 'idle';
       this._timer = 1 + Math.random() * 3;
       entity.getComponent('movement')?.stop();

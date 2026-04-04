@@ -66,10 +66,11 @@ export class Shop {
     const itemInfo = itemEntity.getComponent('itemInfo');
     if (!itemInfo || !itemInfo.canPurchase()) return false;
 
-    if (!shopInventory.remove(itemEntity)) return false;
+    const taken = shopInventory.takeOne(itemEntity);
+    if (!taken) return false;
 
-    itemInfo.setOwner(null);
-    buyerInventory.add(itemEntity);
+    taken.getComponent('itemInfo').setOwner(null);
+    buyerInventory.add(taken);
     return true;
   }
 

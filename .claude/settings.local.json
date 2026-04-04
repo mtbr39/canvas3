@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node test)"
+      "Bash(node test)",
+      "Bash(node test/buyStack.test.js)"
     ]
   }
 }

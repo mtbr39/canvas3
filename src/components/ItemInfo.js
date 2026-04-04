@@ -4,6 +4,7 @@ class ItemInfo {
     this.state = 'dropped';
     this.owner = null;
     this.price = 0;
+    this.quantity = 1;
   }
 
   canPickup() {
