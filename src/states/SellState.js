@@ -1,27 +1,30 @@
 import { DecisionState } from './DecisionState.js';
 import { ITEMS } from '../data/Items.js';
 
-const BUY_AMOUNT_MIN = 1;
-const BUY_AMOUNT_MAX = 3;
-
-export class BuyState {
-  constructor(matcher) {
+export class SellState {
+  constructor(matcher, categories = []) {
     this._matcher = matcher;
+    this._categories = categories;
     this._shopEntity = null;
   }
 
   static category(cat) {
-    return new BuyState(itemType => ITEMS[itemType]?.categories?.includes(cat));
+    return new SellState(itemType => ITEMS[itemType]?.categories?.includes(cat), [cat]);
   }
 
   static item(type) {
-    return new BuyState(itemType => itemType === type);
+    const cats = ITEMS[type]?.categories ?? [];
+    return new SellState(itemType => itemType === type, cats);
+  }
+
+  _getCategories() {
+    return this._categories;
   }
 
   enter(entity) {
     entity.getComponent('party')?.detach();
 
-    this._shopEntity = this._findNearestShopWith(entity);
+    this._shopEntity = this._findNearestShop(entity);
 
     if (!this._shopEntity) {
       entity.getComponent('party')?.reattach();
@@ -38,30 +41,31 @@ export class BuyState {
 
     const movement = entity.getComponent('movement');
     if (movement?.hasArrived()) {
-      this._buy(entity);
+      this._sell(entity);
       entity.getComponent('party')?.reattach();
       entity.getComponent('behavior').changeState(new DecisionState());
     }
   }
 
-  _buy(entity) {
+  _sell(entity) {
     const shop = this._shopEntity.getComponent('shop');
     const inventory = entity.getComponent('inventory');
     if (!shop || !inventory) return;
 
-    const forSale = shop.getItemsForSale().filter(item => {
+    const toSell = inventory.items.filter(item => {
       const info = item.getComponent('itemInfo');
       return info && this._matcher(info.itemType);
     });
 
-    const amount = BUY_AMOUNT_MIN + Math.floor(Math.random() * (BUY_AMOUNT_MAX - BUY_AMOUNT_MIN + 1));
-    let bought = 0;
-    for (const item of forSale) {
-      while (bought < amount && item.getComponent('itemInfo')?.canPurchase()) {
-        if (!shop.buy(item, inventory)) break;
-        bought++;
+    for (const item of toSell) {
+      const info = item.getComponent('itemInfo');
+      const price = ITEMS[info.itemType]?.price ?? 1;
+      const qty = info.quantity;
+      for (let i = 0; i < qty; i++) {
+        const taken = inventory.takeOne(item);
+        if (!taken) break;
+        if (!shop.sell(taken, price, inventory)) break;
       }
-      if (bought >= amount) break;
     }
   }
 
@@ -76,7 +80,7 @@ export class BuyState {
     };
   }
 
-  _findNearestShopWith(entity) {
+  _findNearestShop(entity) {
     const transform = entity.getComponent('transform');
     let nearest = null;
     let nearestDistSq = Infinity;
@@ -85,11 +89,8 @@ export class BuyState {
       const shop = e.getComponent('shop');
       if (!shop) continue;
 
-      const hasMatch = shop.getItemsForSale().some(item => {
-        const info = item.getComponent('itemInfo');
-        return info && this._matcher(info.itemType);
-      });
-      if (!hasMatch) continue;
+      const canSellHere = this._getCategories().some(cat => shop.acceptsCategory(cat));
+      if (!canSellHere) continue;
 
       const t = e.getComponent('transform');
       const dx = t.x - transform.x;

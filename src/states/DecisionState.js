@@ -7,6 +7,7 @@ import { SoloMoveToState } from './SoloMoveToState.js';
 import { HomeState } from './HomeState.js';
 import { EatState, GATHER_RADIUS } from './EatState.js';
 import { BuyState } from './BuyState.js';
+import { SellState } from './SellState.js';
 import { ITEMS } from '../data/Items.js';
 import { debug } from '../core/debug.js';
 
@@ -41,6 +42,29 @@ export function checkEatCondition(entity) {
       debug.log(`[checkEat #${entity.id}] 空腹だが食料なし ratio=${nutrition.ratio.toFixed(2)}`);
     }
   }
+
+  return null;
+}
+
+const SELL_FOOD_THRESHOLD = 5;
+
+function checkSellCondition(inventory) {
+  if (!inventory) return null;
+
+  const hasMaterial = inventory.items.some(item => {
+    const info = item.getComponent('itemInfo');
+    return ITEMS[info?.itemType]?.categories?.includes('material');
+  });
+  if (hasMaterial) return SellState.category('material');
+
+  const foodCount = inventory.items.reduce((sum, item) => {
+    const info = item.getComponent('itemInfo');
+    if (ITEMS[info?.itemType]?.categories?.includes('food')) {
+      return sum + info.quantity;
+    }
+    return sum;
+  }, 0);
+  if (foodCount >= SELL_FOOD_THRESHOLD) return SellState.category('food');
 
   return null;
 }
@@ -91,23 +115,6 @@ export class DecisionState {
     if (eatState) {
       behavior.changeState(eatState);
       return;
-    }
-
-    // 食料購入判断：栄養60以下で手持ちに食料がなければ買いに行く
-    const nutrition = entity.getComponent('nutrition');
-    const inventory = entity.getComponent('inventory');
-    if (nutrition && nutrition.ratio <= BUY_THRESHOLD) {
-      const hasFood = inventory?.items.some(item => {
-        const info = item.getComponent('itemInfo');
-        return ITEMS[info?.itemType]?.categories?.includes('food');
-      });
-      const hasCoins = inventory?.items.some(item =>
-        item.getComponent('itemInfo')?.itemType === 'coin'
-      );
-      if (!hasFood && hasCoins) {
-        behavior.changeState(BuyState.category('food'));
-        return;
-      }
     }
 
     // パーティメンバーが調理中 → 必ず集まる（空腹度に関わらず）
@@ -172,6 +179,30 @@ export class DecisionState {
       if (nearestVillage) {
         const dest = this._getVillageEntryPoint(transform, nearestVillage);
         behavior.changeState(new PartyMoveToState(dest.x, dest.y));
+        return;
+      }
+    }
+
+    // 売却判断
+    const inventory = entity.getComponent('inventory');
+    const sellState = checkSellCondition(inventory);
+    if (sellState) {
+      behavior.changeState(sellState);
+      return;
+    }
+
+    // 食料購入判断：栄養60以下で手持ちに食料がなければ買いに行く
+    const nutrition = entity.getComponent('nutrition');
+    if (nutrition && nutrition.ratio <= BUY_THRESHOLD) {
+      const hasFood = inventory?.items.some(item => {
+        const info = item.getComponent('itemInfo');
+        return ITEMS[info?.itemType]?.categories?.includes('food');
+      });
+      const hasCoins = inventory?.items.some(item =>
+        item.getComponent('itemInfo')?.itemType === 'coin'
+      );
+      if (!hasFood && hasCoins) {
+        behavior.changeState(BuyState.category('food'));
         return;
       }
     }

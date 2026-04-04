@@ -37,6 +37,7 @@ export function createVillage(x, y, name = '') {
 
   const innCount = 2 + Math.floor(Math.random() * 6);
   const shopCount = 2 + Math.floor(Math.random() * 6);
+  const materialShopCount = 1 + Math.floor(Math.random() * 3);
 
   const buildings = [];
 
@@ -46,8 +47,13 @@ export function createVillage(x, y, name = '') {
   }
 
   for (let i = 0; i < shopCount; i++) {
-    const pos = tryPlace(x, y, hw, hh, margin, 'shop', placed);
-    if (pos) buildings.push(createBuilding(pos.x, pos.y, 'shop'));
+    const pos = tryPlace(x, y, hw, hh, margin, 'foodShop', placed);
+    if (pos) buildings.push(createBuilding(pos.x, pos.y, 'foodShop'));
+  }
+
+  for (let i = 0; i < materialShopCount; i++) {
+    const pos = tryPlace(x, y, hw, hh, margin, 'materialShop', placed);
+    if (pos) buildings.push(createBuilding(pos.x, pos.y, 'materialShop'));
   }
 
   return [location, ...buildings];

@@ -155,6 +155,7 @@ export const ITEMS = {
   hide: {
     name: '普通の皮',
     categories: ['material'],
+    price: 2,
     dropVisual: {
       shape: 'rect',
       fill: colors.brown01

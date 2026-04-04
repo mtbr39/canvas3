@@ -4,9 +4,14 @@ import { ITEMS } from '../data/Items.js';
 const ITEM_SPACING = 20;
 
 export class Shop {
-  constructor() {
+  constructor(acceptsCategories = []) {
     this.entity = null;
     this.initialized = false;
+    this.acceptsCategories = acceptsCategories;
+  }
+
+  acceptsCategory(cat) {
+    return this.acceptsCategories.includes(cat);
   }
 
   update() {
@@ -17,6 +22,14 @@ export class Shop {
   }
 
   _spawnInitialItems() {
+    if (this.acceptsCategory('material')) {
+      this._spawnInitialCoins();
+      return;
+    }
+    this._spawnBread();
+  }
+
+  _spawnBread() {
     const inventory = this.entity.getComponent('inventory');
     const transform = this.entity.getComponent('transform');
     const collider = this.entity.getComponent('collider');
@@ -42,6 +55,15 @@ export class Shop {
       inventory.add(bread);
       this.entity.game.addEntity(bread);
     }
+  }
+
+  _spawnInitialCoins() {
+    const inventory = this.entity.getComponent('inventory');
+    const transform = this.entity.getComponent('transform');
+    if (!inventory || !transform) return;
+
+    inventory.capacity = 100;
+    this._addCoinsToShop(50 + Math.floor(Math.random() * 50));
   }
 
   listItem(itemEntity, price) {
@@ -114,11 +136,40 @@ export class Shop {
     const shopInventory = this.entity.getComponent('inventory');
     if (!shopInventory || shopInventory.isFull()) return false;
 
-    if (sellerInventory && !sellerInventory.remove(itemEntity)) return false;
+    if (price > 0 && !this._paySeller(sellerInventory, price)) return false;
 
     shopInventory.add(itemEntity);
     const itemInfo = itemEntity.getComponent('itemInfo');
     if (itemInfo) itemInfo.setSalePrice(price);
     return true;
+  }
+
+  _paySeller(sellerInventory, amount) {
+    const shopInventory = this.entity.getComponent('inventory');
+    const coinItem = shopInventory.items.find(
+      e => e.getComponent('itemInfo')?.itemType === 'coin'
+    );
+    if (!coinItem) return false;
+
+    const coinInfo = coinItem.getComponent('itemInfo');
+    if (coinInfo.quantity < amount) return false;
+
+    if (coinInfo.quantity === amount) {
+      shopInventory.remove(coinItem);
+      this.entity.game.markEntityForRemoval(coinItem);
+    } else {
+      coinInfo.quantity -= amount;
+    }
+
+    this._addCoinsToInventory(sellerInventory, amount);
+    return true;
+  }
+
+  _addCoinsToInventory(inventory, amount) {
+    const transform = this.entity.getComponent('transform');
+    const coin = createItem(transform.x, transform.y, 'coin');
+    coin.getComponent('itemInfo').quantity = amount;
+    this.entity.game.addEntity(coin);
+    inventory.add(coin);
   }
 }

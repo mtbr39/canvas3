@@ -15,11 +15,19 @@ export const BUILDING_CONFIGS = {
     stroke: colors.orange01,
     strokeWidth: 2,
   },
-  shop: {
+  foodShop: {
     width: 240,
     height: 180,
     stroke: colors.blue03,
     strokeWidth: 2,
+    acceptsCategories: ['food'],
+  },
+  materialShop: {
+    width: 240,
+    height: 180,
+    stroke: colors.brown01,
+    strokeWidth: 2,
+    acceptsCategories: ['material'],
   },
 };
 
@@ -42,9 +50,9 @@ export function createBuilding(x, y, type) {
     entity.addComponent('inn', new Inn());
   }
 
-  if (type === 'shop') {
+  if (config.acceptsCategories) {
     entity.addComponent('inventory', new Inventory());
-    entity.addComponent('shop', new Shop());
+    entity.addComponent('shop', new Shop(config.acceptsCategories));
   }
 
   return entity;
