@@ -35,9 +35,15 @@ export function createVillage(x, y, name = '') {
   const margin = 150;
   const placed = [];
 
-  const innCount = 2 + Math.floor(Math.random() * 6);
-  const shopCount = 2 + Math.floor(Math.random() * 6);
-  const materialShopCount = 1 + Math.floor(Math.random() * 3);
+  const DENSITY_SCALE = 10_000_000;
+  const INN_DENSITY = 20;
+  const SHOP_DENSITY = 10;
+  const MATERIAL_SHOP_DENSITY = 5;
+
+  const area = width * height;
+  const innCount = Math.max(1, Math.round(INN_DENSITY * area / DENSITY_SCALE + (Math.random() - 0.5) * 2));
+  const shopCount = Math.max(1, Math.round(SHOP_DENSITY * area / DENSITY_SCALE + (Math.random() - 0.5) * 2));
+  const materialShopCount = Math.max(1, Math.round(MATERIAL_SHOP_DENSITY * area / DENSITY_SCALE + (Math.random() - 0.5)));
 
   const buildings = [];
 

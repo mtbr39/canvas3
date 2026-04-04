@@ -67,7 +67,7 @@ export class HuntingState {
 
     const village = this._findNearestVillage(entity.game, transform.x, transform.y);
     if (village) {
-      const dest = this._getVillageEntryPoint(transform, village);
+      const dest = this._getVillageEntryPoint(village);
       behavior.changeState(new PartyMoveToState(dest.x, dest.y));
     } else {
       behavior.changeState(new DecisionState());
@@ -93,23 +93,14 @@ export class HuntingState {
     return nearest;
   }
 
-  _getVillageEntryPoint(fromTransform, villageEntity, margin = 200) {
+  _getVillageEntryPoint(villageEntity) {
     const vt = villageEntity.getComponent('transform');
     const collider = villageEntity.getComponent('collider');
-    const hw = collider.shape.width / 2;
-    const hh = collider.shape.height / 2;
-
-    const edgeX = Math.max(vt.x - hw, Math.min(fromTransform.x, vt.x + hw));
-    const edgeY = Math.max(vt.y - hh, Math.min(fromTransform.y, vt.y + hh));
-
-    const dx = vt.x - edgeX;
-    const dy = vt.y - edgeY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist <= margin) return { x: vt.x, y: vt.y };
-
+    const hw = collider.shape.width / 2 * 0.8;
+    const hh = collider.shape.height / 2 * 0.8;
     return {
-      x: edgeX + (dx / dist) * margin,
-      y: edgeY + (dy / dist) * margin,
+      x: vt.x + (Math.random() - 0.5) * hw * 2,
+      y: vt.y + (Math.random() - 0.5) * hh * 2,
     };
   }
 }

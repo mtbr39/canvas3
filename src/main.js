@@ -17,6 +17,8 @@ const WORLD_WIDTH = 8000;
 const WORLD_HEIGHT = 4000;
 const HUMAN_COUNT = 30;
 const MONSTER_COUNT = 30;
+const VILLAGE_HUMAN_COUNT = 10;
+const VILLAGE_SPAWN_RADIUS = 800;
 
 let humanCount = 0;
 while (humanCount < HUMAN_COUNT) {
@@ -41,12 +43,24 @@ for (let i = 0; i < 30; i++) {
   game.addEntity(createItem(x, y, itemType));
 }
 
-for (const e of createVillage(4000, 2000, '南の村')) {
-  game.addEntity(e);
-}
+const villagePositions = [
+  { x: 4000, y: 2000, name: '南の村' },
+  { x: -4000, y: -400, name: '西の村' },
+];
 
-for (const e of createVillage(-4000, -400, '西の村')) {
-  game.addEntity(e);
+for (const { x, y, name } of villagePositions) {
+  for (const e of createVillage(x, y, name)) {
+    game.addEntity(e);
+  }
+
+  let count = 0;
+  while (count < VILLAGE_HUMAN_COUNT) {
+    const size = Math.min(Math.floor(Math.random() * 4) + 1, VILLAGE_HUMAN_COUNT - count);
+    const hx = x + (Math.random() - 0.5) * VILLAGE_SPAWN_RADIUS * 2;
+    const hy = y + (Math.random() - 0.5) * VILLAGE_SPAWN_RADIUS * 2;
+    createHumanParty(game, hx, hy, size);
+    count += size;
+  }
 }
 
 game.run();

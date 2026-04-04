@@ -8,6 +8,7 @@ import { HomeState } from './HomeState.js';
 import { EatState, GATHER_RADIUS } from './EatState.js';
 import { BuyState } from './BuyState.js';
 import { SellState } from './SellState.js';
+import { HuntingState } from './HuntingState.js';
 import { ITEMS } from '../data/Items.js';
 import { debug } from '../core/debug.js';
 
@@ -47,6 +48,7 @@ export function checkEatCondition(entity) {
 }
 
 const SELL_FOOD_THRESHOLD = 5;
+const HUNT_COIN_THRESHOLD = 10;
 
 function checkSellCondition(inventory) {
   if (!inventory) return null;
@@ -173,13 +175,15 @@ export class DecisionState {
 
     // 村にいなければ最寄りの村へ向かう
     const resident = entity.getComponent('resident');
-    if (resident && !resident.isInLocation('village')) {
+    if (resident && !resident.home) {
       const transform = entity.getComponent('transform');
-      const nearestVillage = this._findNearestVillage(game, transform.x, transform.y);
-      if (nearestVillage) {
-        const dest = this._getVillageEntryPoint(transform, nearestVillage);
-        behavior.changeState(new PartyMoveToState(dest.x, dest.y));
-        return;
+      if (!this._isInsideAnyVillage(game, transform.x, transform.y)) {
+        const nearestVillage = this._findNearestVillage(game, transform.x, transform.y);
+        if (nearestVillage) {
+          const dest = this._getVillageEntryPoint(nearestVillage);
+          behavior.changeState(new PartyMoveToState(dest.x, dest.y));
+          return;
+        }
       }
     }
 
@@ -207,9 +211,17 @@ export class DecisionState {
       }
     }
 
+    // コインが少なければ狩りに行く
+    const coins = inventory?.findByType('coin');
+    const coinCount = coins?.getComponent('itemInfo')?.quantity ?? 0;
+    if (coinCount <= HUNT_COIN_THRESHOLD) {
+      behavior.changeState(new HuntingState());
+      return;
+    }
+
     // Check if homeless and in a village → check into an inn
     if (resident && !resident.home && resident.isInLocation('village')) {
-      resident.checkIn();
+        resident.checkIn();
     }
 
     // 家があれば帰宅する
@@ -251,26 +263,28 @@ export class DecisionState {
     return nearest;
   }
 
-  // 村の縁から margin だけ内側の、最も近い入村地点を返す
-  _getVillageEntryPoint(fromTransform, villageEntity, margin = 200) {
+  _isInsideAnyVillage(game, x, y) {
+    for (const entity of game.entities) {
+      const tag = entity.getComponent('tag');
+      if (!tag || !tag.hasTag('village')) continue;
+      const t = entity.getComponent('transform');
+      const collider = entity.getComponent('collider');
+      if (!t || !collider || collider.shape.type !== 'rect') continue;
+      const hw = collider.shape.width / 2;
+      const hh = collider.shape.height / 2;
+      if (Math.abs(x - t.x) < hw && Math.abs(y - t.y) < hh) return true;
+    }
+    return false;
+  }
+
+  _getVillageEntryPoint(villageEntity) {
     const vt = villageEntity.getComponent('transform');
     const collider = villageEntity.getComponent('collider');
-    const hw = collider.shape.width / 2;
-    const hh = collider.shape.height / 2;
-
-    // fromTransform から最も近い矩形境界上の点
-    const edgeX = Math.max(vt.x - hw, Math.min(fromTransform.x, vt.x + hw));
-    const edgeY = Math.max(vt.y - hh, Math.min(fromTransform.y, vt.y + hh));
-
-    // 境界点から中心へ margin 分引き込む
-    const dx = vt.x - edgeX;
-    const dy = vt.y - edgeY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist <= margin) return { x: vt.x, y: vt.y };
-
+    const hw = collider.shape.width / 2 * 0.8;
+    const hh = collider.shape.height / 2 * 0.8;
     return {
-      x: edgeX + (dx / dist) * margin,
-      y: edgeY + (dy / dist) * margin,
+      x: vt.x + (Math.random() - 0.5) * hw * 2,
+      y: vt.y + (Math.random() - 0.5) * hh * 2,
     };
   }
 }
