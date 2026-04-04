@@ -170,18 +170,23 @@ console.log('\n[Test 6] Shop.buy → buyerのインベントリ & game.entities'
   const shopQuantityBefore = stackItem.getComponent('itemInfo').quantity;
   console.log(`    店のスタック: quantity=${shopQuantityBefore}`);
 
-  // 人間を作成
+  // 人間を作成（コインを持たせる）
   const human = createHuman(100, 100);
   game.addEntity(human);
   const buyerInv = human.getComponent('inventory');
+  const coins = createItem(100, 100, 'coin');
+  coins.getComponent('itemInfo').quantity = 10;
+  coins.getComponent('itemInfo').setOwner(human.id);
+  game.addEntity(coins);
+  buyerInv.add(coins);
 
   // 1個購入
   const result = shop.buy(stackItem, buyerInv);
   assert(result === true, 'buy()がtrueを返す');
-  assert(buyerInv.items.length === 1, `buyerのitems.length=1 (実際: ${buyerInv.items.length})`);
+  assert(buyerInv.items.length === 2, `buyerのitems.length=2 (実際: ${buyerInv.items.length})`);
 
-  const boughtItem = buyerInv.items[0];
-  assert(boughtItem !== undefined, 'buyerのインベントリにアイテムが存在する');
+  const boughtItem = buyerInv.items.find(e => e.getComponent('itemInfo')?.itemType === 'bread');
+  assert(boughtItem !== undefined, 'buyerのインベントリにパンが存在する');
   assert(game.entities.includes(boughtItem), '購入アイテムがgame.entitiesに存在する');
 
   // さらに2個購入（同じスタックから）
@@ -189,13 +194,19 @@ console.log('\n[Test 6] Shop.buy → buyerのインベントリ & game.entities'
   shop.buy(stackItem, buyerInv);
   game.removeMarkedEntities();
 
-  assert(buyerInv.items.length === 1, `スタックされてitems.length=1 (実際: ${buyerInv.items.length})`);
-  assert(buyerInv.items[0].getComponent('itemInfo').quantity === 3, `quantity=3 (実際: ${buyerInv.items[0].getComponent('itemInfo').quantity})`);
-  assert(game.entities.includes(buyerInv.items[0]), '代表アイテムがgame.entitiesに残っている');
+  const breadItems = buyerInv.items.filter(e => e.getComponent('itemInfo')?.itemType === 'bread');
+  assert(breadItems.length === 1, `パンがスタックされてbread=1 (実際: ${breadItems.length})`);
+  assert(breadItems[0].getComponent('itemInfo').quantity === 3, `quantity=3 (実際: ${breadItems[0].getComponent('itemInfo').quantity})`);
+  assert(game.entities.includes(breadItems[0]), '代表アイテムがgame.entitiesに残っている');
+
+  // コインが減っているか
+  const coinItem = buyerInv.items.find(e => e.getComponent('itemInfo')?.itemType === 'coin');
+  assert(coinItem !== undefined, 'コインがまだインベントリにある');
+  assert(coinItem.getComponent('itemInfo').quantity === 7, `コインが7枚残っている (実際: ${coinItem.getComponent('itemInfo').quantity})`);
 
   // CarriedItemsFollowerが動くか
   runFrames(game, 1);
-  const follow = buyerInv.items[0].getComponent('followOwner');
+  const follow = breadItems[0].getComponent('followOwner');
   assert(follow !== undefined, '購入アイテムにFollowOwnerが付いている');
   assert(follow.owner === human, 'ownerがhumanを指している');
 }
@@ -230,6 +241,13 @@ console.log('\n[Test 8] 購入後フレーム進めて追従確認');
   const human = createHuman(300, 300);
   game.addEntity(human);
 
+  // コインを持たせる
+  const coins8 = createItem(300, 300, 'coin');
+  coins8.getComponent('itemInfo').quantity = 10;
+  coins8.getComponent('itemInfo').setOwner(human.id);
+  game.addEntity(coins8);
+  human.getComponent('inventory').add(coins8);
+
   const shop = shopEntity.getComponent('shop');
   const buyerInv = human.getComponent('inventory');
   const forSale = shop.getItemsForSale();
@@ -243,7 +261,7 @@ console.log('\n[Test 8] 購入後フレーム進めて追従確認');
   // 数フレーム回す
   runFrames(game, 10);
 
-  const item = buyerInv.items[0];
+  const item = buyerInv.items.find(e => e.getComponent('itemInfo')?.itemType === 'bread');
   assert(item !== undefined, 'インベントリにアイテムがある');
   assert(game.entities.includes(item), 'game.entitiesに含まれている');
 

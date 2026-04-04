@@ -19,11 +19,15 @@ import { Resident } from '../components/Resident.js';
 import { Party } from '../components/Party.js';
 import { Nutrition } from '../components/Nutrition.js';
 import { Vitality } from '../components/Vitality.js';
+import createItem from './Item.js';
 import { colors } from '../data/Colors.js';
 
 const HUMAN_STATS = {
   detectionRange: 200,
 };
+
+const INITIAL_COINS_MIN = 3;
+const INITIAL_COINS_MAX = 10;
 
 // x, y を中心に size 人のパーティを生成してgameに追加する
 export function createHumanParty(game, x, y, size) {
@@ -33,12 +37,25 @@ export function createHumanParty(game, x, y, size) {
     const my = y + (Math.random() - 0.5) * 100;
     const human = createHuman(mx, my);
     game.addEntity(human);
+    _giveInitialCoins(game, human);
     members.push(human);
   }
   if (members.length > 1) {
     members[0].getComponent('party').form(members.slice(1));
   }
   return members;
+}
+
+function _giveInitialCoins(game, entity) {
+  const inventory = entity.getComponent('inventory');
+  const transform = entity.getComponent('transform');
+  if (!inventory || !transform) return;
+
+  const coin = createItem(transform.x, transform.y, 'coin');
+  coin.getComponent('itemInfo').quantity = INITIAL_COINS_MIN + Math.floor(Math.random() * (INITIAL_COINS_MAX - INITIAL_COINS_MIN + 1));
+  coin.getComponent('itemInfo').setOwner(entity.id);
+  game.addEntity(coin);
+  inventory.add(coin);
 }
 
 export function createHuman(x, y) {

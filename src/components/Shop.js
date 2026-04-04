@@ -1,6 +1,6 @@
 import createItem from '../entities/Item.js';
+import { ITEMS } from '../data/Items.js';
 
-const BREAD_PRICE = 10;
 const ITEM_SPACING = 20;
 
 export class Shop {
@@ -37,7 +37,8 @@ export class Shop {
 
       const bread = createItem(x, y, 'bread');
       if (!bread) break;
-      bread.getComponent('itemInfo').setSalePrice(BREAD_PRICE);
+      const price = ITEMS['bread'].price ?? 0;
+      bread.getComponent('itemInfo').setSalePrice(price);
       inventory.add(bread);
       this.entity.game.addEntity(bread);
     }
@@ -66,11 +67,32 @@ export class Shop {
     const itemInfo = itemEntity.getComponent('itemInfo');
     if (!itemInfo || !itemInfo.canPurchase()) return false;
 
+    const price = itemInfo.price;
+    if (price > 0 && !this._payCoins(buyerInventory, price)) return false;
+
     const taken = shopInventory.takeOne(itemEntity);
     if (!taken) return false;
 
     taken.getComponent('itemInfo').setOwner(null);
     buyerInventory.add(taken);
+    return true;
+  }
+
+  _payCoins(buyerInventory, amount) {
+    const coinItem = buyerInventory.items.find(
+      e => e.getComponent('itemInfo')?.itemType === 'coin'
+    );
+    if (!coinItem) return false;
+
+    const coinInfo = coinItem.getComponent('itemInfo');
+    if (coinInfo.quantity < amount) return false;
+
+    if (coinInfo.quantity === amount) {
+      buyerInventory.remove(coinItem);
+      this.entity.game.markEntityForRemoval(coinItem);
+    } else {
+      coinInfo.quantity -= amount;
+    }
     return true;
   }
 

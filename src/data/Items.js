@@ -118,11 +118,22 @@ export const ITEMS = {
     }
   },
 
+  // === 通貨 ===
+  coin: {
+    name: 'コイン',
+    categories: ['currency'],
+    dropVisual: {
+      shape: 'rect',
+      fill: colors.yellow01
+    }
+  },
+
   // === 食料 ===
   bread: {
     name: 'パン',
     categories: ['food'],
     nutrition: 50,
+    price: 1,
     dropVisual: {
       shape: 'rect',
       fill: colors.brown01
