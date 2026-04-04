@@ -20,6 +20,7 @@ import { Party } from '../components/Party.js';
 import { Nutrition } from '../components/Nutrition.js';
 import { Vitality } from '../components/Vitality.js';
 import createItem from './Item.js';
+import { give } from '../components/ItemExchanger.js';
 import { colors } from '../data/Colors.js';
 
 const HUMAN_STATS = {
@@ -46,16 +47,14 @@ export function createHumanParty(game, x, y, size) {
   return members;
 }
 
-function _giveInitialCoins(game, entity) {
+function _giveInitialCoins(_game, entity) {
   const inventory = entity.getComponent('inventory');
   const transform = entity.getComponent('transform');
   if (!inventory || !transform) return;
 
   const coin = createItem(transform.x, transform.y, 'coin');
   coin.getComponent('itemInfo').quantity = INITIAL_COINS_MIN + Math.floor(Math.random() * (INITIAL_COINS_MAX - INITIAL_COINS_MIN + 1));
-  coin.getComponent('itemInfo').setOwner(entity.id);
-  game.addEntity(coin);
-  inventory.add(coin);
+  give(coin, inventory);
 }
 
 export function createHuman(x, y) {

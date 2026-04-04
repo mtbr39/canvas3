@@ -11,22 +11,19 @@ class ItemInfo {
     return this.state === 'dropped' && this.owner === null;
   }
 
-  canPurchase() {
-    return this.state === 'forSale';
-  }
-
   drop() {
     this.state = 'dropped';
     this.owner = null;
+    this.price = 0;
   }
 
   setOwner(ownerId) {
     this.state = 'owned';
     this.owner = ownerId;
+    this.price = 0;
   }
 
-  setSalePrice(price) {
-    this.state = 'forSale';
+  setPrice(price) {
     this.price = price;
   }
 }

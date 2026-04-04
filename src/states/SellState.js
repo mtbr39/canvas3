@@ -52,20 +52,14 @@ export class SellState {
     const inventory = entity.getComponent('inventory');
     if (!shop || !inventory) return;
 
-    const toSell = inventory.items.filter(item => {
+    const toSell = [...inventory.items].filter(item => {
       const info = item.getComponent('itemInfo');
       return info && this._matcher(info.itemType);
     });
 
     for (const item of toSell) {
-      const info = item.getComponent('itemInfo');
-      const price = ITEMS[info.itemType]?.price ?? 1;
-      const qty = info.quantity;
-      for (let i = 0; i < qty; i++) {
-        const taken = inventory.takeOne(item);
-        if (!taken) break;
-        if (!shop.sell(taken, price, inventory)) break;
-      }
+      const price = ITEMS[item.getComponent('itemInfo').itemType]?.price ?? 1;
+      shop.sell(item, price, inventory);
     }
   }
 

@@ -1,7 +1,9 @@
 import createItem from '../entities/Item.js';
 import { ITEMS } from '../data/Items.js';
+import { transfer, give } from './ItemExchanger.js';
 
-const ITEM_SPACING = 20;
+const ITEM_SPACING = 35;
+const ITEM_MARGIN = 25;
 
 export class Shop {
   constructor(acceptsCategories = []) {
@@ -19,6 +21,26 @@ export class Shop {
       this.initialized = true;
       this._spawnInitialItems();
     }
+    this._layoutItems();
+  }
+
+  _layoutItems() {
+    const inventory = this.entity.getComponent('inventory');
+    const transform = this.entity.getComponent('transform');
+    const collider = this.entity.getComponent('collider');
+    if (!inventory || !transform || !collider) return;
+
+    const w = collider.shape.width;
+    const cols = Math.max(1, Math.floor((w - ITEM_MARGIN * 2) / ITEM_SPACING));
+
+    inventory.items.forEach((item, i) => {
+      const t = item.getComponent('transform');
+      if (!t) return;
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      t.x = transform.x - w / 2 + ITEM_MARGIN + col * ITEM_SPACING;
+      t.y = transform.y - collider.shape.height / 2 + ITEM_MARGIN + row * ITEM_SPACING;
+    });
   }
 
   _spawnInitialItems() {
@@ -32,29 +54,16 @@ export class Shop {
   _spawnBread() {
     const inventory = this.entity.getComponent('inventory');
     const transform = this.entity.getComponent('transform');
-    const collider = this.entity.getComponent('collider');
     if (!inventory || !transform) return;
 
     const count = 10 + Math.floor(Math.random() * 50);
     inventory.capacity = count;
 
-    const w = collider?.shape.width ?? 240;
-    const h = collider?.shape.height ?? 180;
-    const cols = Math.floor((w - ITEM_SPACING) / ITEM_SPACING);
-
-    for (let i = 0; i < count; i++) {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      const x = transform.x - w / 2 + ITEM_SPACING + col * ITEM_SPACING;
-      const y = transform.y - h / 2 + ITEM_SPACING + row * ITEM_SPACING;
-
-      const bread = createItem(x, y, 'bread');
-      if (!bread) break;
-      const price = ITEMS['bread'].price ?? 0;
-      bread.getComponent('itemInfo').setSalePrice(price);
-      inventory.add(bread);
-      this.entity.game.addEntity(bread);
-    }
+    const bread = createItem(transform.x, transform.y, 'bread');
+    if (!bread) return;
+    bread.getComponent('itemInfo').quantity = count;
+    const received = give(bread, inventory);
+    received.getComponent('itemInfo').setPrice(ITEMS['bread'].price ?? 1);
   }
 
   _spawnInitialCoins() {
@@ -63,23 +72,16 @@ export class Shop {
     if (!inventory || !transform) return;
 
     inventory.capacity = 100;
-    this._addCoinsToShop(50 + Math.floor(Math.random() * 50));
-  }
-
-  listItem(itemEntity, price) {
-    const itemInfo = itemEntity.getComponent('itemInfo');
-    if (!itemInfo) return false;
-    itemInfo.setSalePrice(price);
-    return true;
+    const amount = 50 + Math.floor(Math.random() * 50);
+    const coin = createItem(transform.x, transform.y, 'coin');
+    coin.getComponent('itemInfo').quantity = amount;
+    give(coin, inventory);
   }
 
   getItemsForSale() {
     const inventory = this.entity.getComponent('inventory');
     if (!inventory) return [];
-    return inventory.items.filter(item => {
-      const itemInfo = item.getComponent('itemInfo');
-      return itemInfo && itemInfo.canPurchase();
-    });
+    return inventory.items.filter(item => item.getComponent('itemInfo')?.price > 0);
   }
 
   buy(itemEntity, buyerInventory) {
@@ -87,89 +89,38 @@ export class Shop {
     if (!shopInventory) return false;
 
     const itemInfo = itemEntity.getComponent('itemInfo');
-    if (!itemInfo || !itemInfo.canPurchase()) return false;
+    if (!itemInfo || itemInfo.price === 0) return false;
+    if (itemInfo.owner !== this.entity.id) return false;
 
     const price = itemInfo.price;
-    if (price > 0 && !this._payCoins(buyerInventory, price)) return false;
+    const buyerCoins = buyerInventory.findByType('coin');
+    if (!buyerCoins || buyerCoins.getComponent('itemInfo').quantity < price) return false;
 
-    const taken = shopInventory.takeOne(itemEntity);
-    if (!taken) return false;
+    const itemType = itemInfo.itemType;
+    if (!buyerInventory.findByType(itemType) && buyerInventory.isFull()) return false;
 
-    taken.getComponent('itemInfo').setOwner(null);
-    buyerInventory.add(taken);
+    transfer(buyerCoins, buyerInventory, shopInventory, price);
+    transfer(itemEntity, shopInventory, buyerInventory, 1);
     return true;
-  }
-
-  _payCoins(buyerInventory, amount) {
-    const coinItem = buyerInventory.items.find(
-      e => e.getComponent('itemInfo')?.itemType === 'coin'
-    );
-    if (!coinItem) return false;
-
-    const coinInfo = coinItem.getComponent('itemInfo');
-    if (coinInfo.quantity < amount) return false;
-
-    if (coinInfo.quantity === amount) {
-      buyerInventory.remove(coinItem);
-      this.entity.game.markEntityForRemoval(coinItem);
-    } else {
-      coinInfo.quantity -= amount;
-    }
-
-    this._addCoinsToShop(amount);
-    return true;
-  }
-
-  _addCoinsToShop(amount) {
-    const shopInventory = this.entity.getComponent('inventory');
-    const transform = this.entity.getComponent('transform');
-    if (!shopInventory || !transform) return;
-
-    const coin = createItem(transform.x, transform.y, 'coin');
-    coin.getComponent('itemInfo').quantity = amount;
-    coin.getComponent('itemInfo').setOwner(this.entity.id);
-    this.entity.game.addEntity(coin);
-    shopInventory.add(coin);
   }
 
   sell(itemEntity, price, sellerInventory) {
     const shopInventory = this.entity.getComponent('inventory');
-    if (!shopInventory || shopInventory.isFull()) return false;
+    if (!shopInventory) return false;
 
-    if (price > 0 && !this._paySeller(sellerInventory, price)) return false;
+    const itemType = itemEntity.getComponent('itemInfo').itemType;
+    if (!shopInventory.findByType(itemType) && shopInventory.isFull()) return false;
 
-    shopInventory.add(itemEntity);
-    const itemInfo = itemEntity.getComponent('itemInfo');
-    if (itemInfo) itemInfo.setSalePrice(price);
+    const shopCoins = shopInventory.findByType('coin');
+    if (!shopCoins || shopCoins.getComponent('itemInfo').quantity < price) return false;
+
+    const maxAffordable = Math.floor(shopCoins.getComponent('itemInfo').quantity / price);
+    const qty = Math.min(itemEntity.getComponent('itemInfo').quantity, maxAffordable);
+    const totalPrice = price * qty;
+
+    transfer(shopCoins, shopInventory, sellerInventory, totalPrice);
+    const received = transfer(itemEntity, sellerInventory, shopInventory, qty);
+    received.getComponent('itemInfo').setPrice(price);
     return true;
-  }
-
-  _paySeller(sellerInventory, amount) {
-    const shopInventory = this.entity.getComponent('inventory');
-    const coinItem = shopInventory.items.find(
-      e => e.getComponent('itemInfo')?.itemType === 'coin'
-    );
-    if (!coinItem) return false;
-
-    const coinInfo = coinItem.getComponent('itemInfo');
-    if (coinInfo.quantity < amount) return false;
-
-    if (coinInfo.quantity === amount) {
-      shopInventory.remove(coinItem);
-      this.entity.game.markEntityForRemoval(coinItem);
-    } else {
-      coinInfo.quantity -= amount;
-    }
-
-    this._addCoinsToInventory(sellerInventory, amount);
-    return true;
-  }
-
-  _addCoinsToInventory(inventory, amount) {
-    const transform = this.entity.getComponent('transform');
-    const coin = createItem(transform.x, transform.y, 'coin');
-    coin.getComponent('itemInfo').quantity = amount;
-    this.entity.game.addEntity(coin);
-    inventory.add(coin);
   }
 }

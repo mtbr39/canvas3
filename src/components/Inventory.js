@@ -1,53 +1,24 @@
-import createItem from '../entities/Item.js';
-
 class Inventory {
   constructor() {
     this.items = [];
     this.capacity = 20;
   }
 
-  add(itemEntity) {
-    const itemInfo = itemEntity.getComponent('itemInfo');
-    if (itemInfo) {
-      const existing = this._findByType(itemInfo.itemType);
-      if (existing) {
-        existing.getComponent('itemInfo').quantity += itemInfo.quantity;
-        this.entity.game.markEntityForRemoval(itemEntity);
-        return true;
-      }
-    }
+  add(item) {
     if (this.items.length >= this.capacity) return false;
-    this.items.push(itemEntity);
+    this.items.push(item);
     return true;
   }
 
-  takeOne(itemEntity) {
-    const itemInfo = itemEntity.getComponent('itemInfo');
-    if (!itemInfo) return null;
-
-    if (itemInfo.quantity > 1) {
-      itemInfo.quantity--;
-      const transform = itemEntity.getComponent('transform');
-      const split = createItem(transform.x, transform.y, itemInfo.itemType);
-      this.entity.game.addEntity(split);
-      return split;
-    }
-
-    this.remove(itemEntity);
-    return itemEntity;
+  remove(item) {
+    const i = this.items.indexOf(item);
+    if (i === -1) return false;
+    this.items.splice(i, 1);
+    return true;
   }
 
-  _findByType(itemType) {
+  findByType(itemType) {
     return this.items.find(e => e.getComponent('itemInfo')?.itemType === itemType) ?? null;
-  }
-
-  remove(itemEntity) {
-    const index = this.items.indexOf(itemEntity);
-    if (index !== -1) {
-      this.items.splice(index, 1);
-      return true;
-    }
-    return false;
   }
 
   isFull() {

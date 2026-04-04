@@ -1,3 +1,5 @@
+import { pickup } from './ItemExchanger.js';
+
 class ItemCollector {
   constructor() {
     this.entity = null;
@@ -9,7 +11,7 @@ class ItemCollector {
   findNearbyItem() {
     const transform = this.entity.getComponent('transform');
     const inventory = this.entity.getComponent('inventory');
-    if (!transform || !inventory || inventory.isFull()) return null;
+    if (!transform || !inventory) return null;
 
     const results = this.entity.game.spatialQuery.findNearbyEntities(
       this.entity.game.entities,
@@ -30,7 +32,10 @@ class ItemCollector {
     if (!itemInfo || !itemInfo.canPickup()) return false;
 
     const inventory = this.entity.getComponent('inventory');
-    if (!inventory || inventory.isFull()) return false;
+    if (!inventory) return false;
+
+    const itemType = itemInfo.itemType;
+    if (!inventory.findByType(itemType) && inventory.isFull()) return false;
 
     const transform = this.entity.getComponent('transform');
     const itemTransform = itemEntity.getComponent('transform');
@@ -38,15 +43,10 @@ class ItemCollector {
 
     const dx = itemTransform.x - transform.x;
     const dy = itemTransform.y - transform.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (Math.sqrt(dx * dx + dy * dy) > this.pickupRange) return false;
 
-    if (distance > this.pickupRange) return false;
-
-    if (inventory.add(itemEntity)) {
-      itemInfo.setOwner(this.entity);
-      return true;
-    }
-    return false;
+    pickup(itemEntity, inventory);
+    return true;
   }
 
   collectNearby() {

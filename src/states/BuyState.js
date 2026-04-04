@@ -57,7 +57,7 @@ export class BuyState {
     const amount = BUY_AMOUNT_MIN + Math.floor(Math.random() * (BUY_AMOUNT_MAX - BUY_AMOUNT_MIN + 1));
     let bought = 0;
     for (const item of forSale) {
-      while (bought < amount && item.getComponent('itemInfo')?.canPurchase()) {
+      while (bought < amount) {
         if (!shop.buy(item, inventory)) break;
         bought++;
       }
