@@ -184,6 +184,8 @@ export class DecisionState {
           behavior.changeState(new PartyMoveToState(dest.x, dest.y));
           return;
         }
+      } else {
+        resident.checkIn();
       }
     }
 
@@ -217,11 +219,6 @@ export class DecisionState {
     if (coinCount <= HUNT_COIN_THRESHOLD) {
       behavior.changeState(new HuntingState());
       return;
-    }
-
-    // Check if homeless and in a village → check into an inn
-    if (resident && !resident.home && resident.isInLocation('village')) {
-        resident.checkIn();
     }
 
     // 家があれば帰宅する
