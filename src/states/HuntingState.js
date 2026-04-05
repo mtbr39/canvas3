@@ -1,13 +1,15 @@
 import { CombatState } from './CombatState.js';
-import { DecisionState } from './DecisionState.js';
 import { PartyMoveToState } from './PartyMoveToState.js';
+import { WanderState } from './WanderState.js';
 
 const HUNT_RANGE = 2000;
 
 export class HuntingState {
-  enter(entity) {
-    const behavior = entity.getComponent('behavior');
+  constructor() {
+    this.target = null;
+  }
 
+  enter(entity) {
     if (this._shouldReturnToTown(entity)) {
       this._returnToTown(entity);
       return;
@@ -19,13 +21,43 @@ export class HuntingState {
       return;
     }
 
-    const state = new CombatState(new HuntingState());
-    state.target = target;
-    behavior.changeState(state);
+    this.target = target;
+    const targetTransform = target.getComponent('transform');
+    entity.getComponent('movement')?.moveTo(targetTransform.x, targetTransform.y);
   }
 
-  update() {}
-  exit() {}
+  update(entity) {
+    if (this._shouldReturnToTown(entity)) {
+      this._returnToTown(entity);
+      return;
+    }
+
+    const health = this.target?.getComponent('health');
+    if (!this.target || (health && health.isDead)) {
+      this.target = this._findNearestEnemy(entity);
+      if (!this.target) {
+        this._returnToTown(entity);
+        return;
+      }
+    }
+
+    const combat = entity.getComponent('combat');
+    const dist = entity.game.spatialQuery.getDistance(entity, this.target);
+    if (dist <= combat.detectionRange) {
+      const behavior = entity.getComponent('behavior');
+      const state = new CombatState(new HuntingState());
+      state.target = this.target;
+      behavior.changeState(state);
+      return;
+    }
+
+    const targetTransform = this.target.getComponent('transform');
+    entity.getComponent('movement')?.moveTo(targetTransform.x, targetTransform.y);
+  }
+  exit(entity) {
+    entity.getComponent('movement')?.stop();
+    this.target = null;
+  }
 
   _findNearestEnemy(entity) {
     const transform = entity.getComponent('transform');
@@ -70,7 +102,7 @@ export class HuntingState {
       const dest = this._getVillageEntryPoint(village);
       behavior.changeState(new PartyMoveToState(dest.x, dest.y));
     } else {
-      behavior.changeState(new DecisionState());
+      behavior.changeState(new WanderState());
     }
   }
 

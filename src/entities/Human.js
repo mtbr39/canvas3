@@ -25,6 +25,7 @@ import { colors } from '../data/Colors.js';
 
 const HUMAN_STATS = {
   detectionRange: 200,
+  chaseRange: 1000,
 };
 
 const INITIAL_COINS_MIN = 3;
@@ -93,9 +94,9 @@ export function createHuman(x, y) {
 
     entity
       .addComponent('equipment', new Equipment(randomWeapon))
-      .addComponent('combat', Combat.createAggressive(HUMAN_STATS.detectionRange));
+      .addComponent('combat', Combat.createAggressive(HUMAN_STATS.detectionRange, HUMAN_STATS.chaseRange));
   } else {
-    entity.addComponent('combat', Combat.createDefensive(HUMAN_STATS.detectionRange));
+    entity.addComponent('combat', Combat.createDefensive(HUMAN_STATS.detectionRange, HUMAN_STATS.chaseRange));
   }
 
   behavior.addInterruptCheck(createInterruptCheck());

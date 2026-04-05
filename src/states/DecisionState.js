@@ -216,8 +216,8 @@ export class DecisionState {
       }
     }
 
-    // コインが少なければ狩りに行く
-    if (inventory) {
+    // コインが少なければ狩りに行く（攻撃的なエンティティのみ）
+    if (combat && combat.shouldSeekCombat && inventory) {
       const coins = inventory.findByType('coin');
       const coinCount = coins?.getComponent('itemInfo')?.quantity ?? 0;
       if (coinCount <= HUNT_COIN_THRESHOLD) {

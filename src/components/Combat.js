@@ -3,21 +3,21 @@ import { createAttackHitbox } from '../entities/AttackHitbox.js';
 const FLEE_SPEED_MULTIPLIER = 3;
 
 export class Combat {
-  constructor(shouldSeekCombat = false, detectionRange) {
+  constructor(shouldSeekCombat = false, detectionRange, chaseRange) {
     this.entity = null;
     this.shouldSeekCombat = shouldSeekCombat;
     this.cooldownTimer = 0;
     this.fleeSpeedMultiplier = FLEE_SPEED_MULTIPLIER;
     this.detectionRange = detectionRange;
-    this.chaseRange = detectionRange * 1.5;
+    this.chaseRange = chaseRange ?? detectionRange * 1.5;
   }
 
-  static createAggressive(detectionRange) {
-    return new Combat(true, detectionRange);
+  static createAggressive(detectionRange, chaseRange) {
+    return new Combat(true, detectionRange, chaseRange);
   }
 
-  static createDefensive(detectionRange) {
-    return new Combat(false, detectionRange);
+  static createDefensive(detectionRange, chaseRange) {
+    return new Combat(false, detectionRange, chaseRange);
   }
 
   getAttackRange() {

@@ -6,6 +6,14 @@ export class InfoRenderer {
     this.showNutrition = true;
   }
 
+  getStateLabel(state) {
+    const name = state.constructor.name;
+    if (name === 'CombatState' && state.returnState?.constructor.name === 'HuntingState') {
+      return 'Hunt(Combat)';
+    }
+    return name;
+  }
+
   isCameraCloseEnough() {
     return this.entity.game.camera.zoom >= 1.0;
   }
@@ -36,7 +44,7 @@ export class InfoRenderer {
 
     const behavior = this.entity.getComponent('behavior');
     if (behavior?.currentState) {
-      lines.push(behavior.currentState.constructor.name);
+      lines.push(this.getStateLabel(behavior.currentState));
     }
 
     const eatState = behavior?.currentState?.constructor.name === 'EatState'
