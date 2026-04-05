@@ -56,6 +56,12 @@ export class CombatState {
       return;
     }
 
+    // Target fled too far - give up
+    if (game.spatialQuery.getDistance(entity, target) > combat.chaseRange) {
+      behavior.changeState(this.returnState ?? new DecisionState());
+      return;
+    }
+
     const targetTransform = target.getComponent('transform');
     if (!targetTransform) {
       behavior.changeState(this.returnState ?? new DecisionState());
@@ -66,14 +72,8 @@ export class CombatState {
     const centerDistance = game.spatialQuery.getDistance(entity, target);
 
     if (!combat.shouldSeekCombat) {
-      // Flee: move away from the enemy
-      const transform = entity.getComponent('transform');
-      const dx = transform.x - targetTransform.x;
-      const dy = transform.y - targetTransform.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > 0) {
-        movement.moveTo(transform.x + (dx / dist) * 200, transform.y + (dy / dist) * 200);
-      }
+      const fleeDestination = this.getFleeDestination(entity, targetTransform);
+      movement.moveTo(fleeDestination.x, fleeDestination.y);
       return;
     }
 
@@ -89,6 +89,57 @@ export class CombatState {
       // Move closer to get within weapon range
       movement.moveTo(targetTransform.x, targetTransform.y);
     }
+  }
+
+  getFleeDestination(entity, targetTransform) {
+    const FLEE_DISTANCE = 200;
+    const ALLY_PROXIMITY_THRESHOLD = 1000;
+    const transform = entity.getComponent('transform');
+
+    const nearestAlly = this.findNearestAlly(entity);
+    if (nearestAlly) {
+      const allyTransform = nearestAlly.getComponent('transform');
+      const dx = transform.x - allyTransform.x;
+      const dy = transform.y - allyTransform.y;
+      const distToAlly = Math.sqrt(dx * dx + dy * dy);
+      if (distToAlly > ALLY_PROXIMITY_THRESHOLD) {
+        return { x: allyTransform.x, y: allyTransform.y };
+      }
+    }
+
+    const dx = transform.x - targetTransform.x;
+    const dy = transform.y - targetTransform.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist === 0) return { x: transform.x, y: transform.y };
+    return {
+      x: transform.x + (dx / dist) * FLEE_DISTANCE,
+      y: transform.y + (dy / dist) * FLEE_DISTANCE,
+    };
+  }
+
+  findNearestAlly(entity) {
+    const party = entity.getComponent('party');
+    if (!party || !party.isInParty()) return null;
+
+    const transform = entity.getComponent('transform');
+    let nearest = null;
+    let nearestDist = Infinity;
+
+    for (const member of party.getMembers()) {
+      if (member === entity) continue;
+      const health = member.getComponent('health');
+      if (!health || health.isDead) continue;
+      const mt = member.getComponent('transform');
+      if (!mt) continue;
+      const dx = transform.x - mt.x;
+      const dy = transform.y - mt.y;
+      const d = dx * dx + dy * dy;
+      if (d < nearestDist) {
+        nearestDist = d;
+        nearest = member;
+      }
+    }
+    return nearest;
   }
 
   exit(entity) {

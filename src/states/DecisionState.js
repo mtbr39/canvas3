@@ -150,10 +150,13 @@ export class DecisionState {
         if (combat) {
           const allyTarget = fightingMember.getComponent('behavior').currentState.getTarget();
           if (allyTarget) {
-            const state = new CombatState();
-            state.target = allyTarget;
-            behavior.changeState(state);
-            return;
+            const dist = entity.game.spatialQuery.getDistance(entity, allyTarget);
+            if (dist <= combat.chaseRange) {
+              const state = new CombatState();
+              state.target = allyTarget;
+              behavior.changeState(state);
+              return;
+            }
           }
         }
       }
@@ -214,11 +217,13 @@ export class DecisionState {
     }
 
     // コインが少なければ狩りに行く
-    const coins = inventory?.findByType('coin');
-    const coinCount = coins?.getComponent('itemInfo')?.quantity ?? 0;
-    if (coinCount <= HUNT_COIN_THRESHOLD) {
-      behavior.changeState(new HuntingState());
-      return;
+    if (inventory) {
+      const coins = inventory.findByType('coin');
+      const coinCount = coins?.getComponent('itemInfo')?.quantity ?? 0;
+      if (coinCount <= HUNT_COIN_THRESHOLD) {
+        behavior.changeState(new HuntingState());
+        return;
+      }
     }
 
     // 家があれば帰宅する

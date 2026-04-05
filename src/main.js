@@ -1,5 +1,6 @@
 import { Game } from './core/Game.js';
 import { PartyManager } from './components/PartyManager.js';
+import { MonsterSpawner } from './components/MonsterSpawner.js';
 import { createHumanParty } from './entities/Human.js';
 import { createMonster } from './entities/Monster.js';
 import createItem from './entities/Item.js';
@@ -10,6 +11,7 @@ const canvas = document.getElementById('game-canvas');
 const game = new Game(canvas);
 
 game.register('partyManager', new PartyManager());
+game.register('monsterSpawner', new MonsterSpawner());
 
 console.log('v0323');
 

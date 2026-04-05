@@ -14,7 +14,7 @@ import { FloatingText } from '../components/FloatingText.js';
 import { Loot } from '../components/Loot.js';
 
 const MONSTER_STATS = {
-  detectionRange: 250,
+  detectionRange: 150,
 };
 
 export function createMonster(x, y) {
