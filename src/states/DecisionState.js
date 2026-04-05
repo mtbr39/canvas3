@@ -9,8 +9,10 @@ import { EatState, GATHER_RADIUS } from './EatState.js';
 import { BuyState } from './BuyState.js';
 import { SellState } from './SellState.js';
 import { HuntingState } from './HuntingState.js';
+import { ReviveState } from './ReviveState.js';
 import { ITEMS } from '../data/Items.js';
 import { debug } from '../core/debug.js';
+import { DeadState } from './DeadState.js';
 
 const EAT_ANYWHERE_THRESHOLD = 0.1;  // この値以下ならどこでも食べる
 const EAT_AT_HOME_THRESHOLD = 0.4;  // この値以下なら家にいるときに食べる
@@ -78,6 +80,7 @@ export function createInterruptCheck() {
 }
 
 function _combatCheck(entity, currentState) {
+  if (entity.getComponent('health')?.isDead) return null;
   if (currentState?.constructor.name === 'CombatState') return null;
 
   const combat = entity.getComponent('combat');
@@ -102,9 +105,50 @@ export class DecisionState {
     const behavior = entity.getComponent('behavior');
     if (!behavior) return;
 
+    if (entity.getComponent('health')?.isDead) {
+      behavior.changeState(new DeadState());
+      return;
+    }
+
     const game = entity.game;
     const party = entity.getComponent('party');
 
+
+    // パーティ内に死んでいるメンバーがいれば蘇生しに行く
+    if (party?.isInParty()) {
+      const deadMember = party.getMembers().find(m =>
+        m !== entity && m.getComponent('health')?.isDead
+      );
+      const combat = entity.getComponent('combat');
+      if (deadMember && !combat?.findNearbyEnemy()) {
+        behavior.changeState(new ReviveState(deadMember));
+        return;
+      }
+    }
+
+    // パーティ内に戦闘中のメンバーがいる場合
+    if (party && party.isInParty()) {
+      const fightingMember = party.getMembers().find(m => {
+        const b = m.getComponent('behavior');
+        return b?.currentState?.constructor.name === 'CombatState';
+      });
+      if (fightingMember) {
+        const combat = entity.getComponent('combat');
+        if (combat) {
+          const allyTarget = fightingMember.getComponent('behavior').currentState.getTarget();
+          if (allyTarget) {
+            const dist = entity.game.spatialQuery.getDistance(entity, allyTarget);
+            if (dist <= combat.chaseRange) {
+              const state = new CombatState();
+              state.target = allyTarget;
+              behavior.changeState(state);
+              return;
+            }
+          }
+        }
+      }
+    }
+    
     // Check if there are nearby items to collect
     const itemCollector = entity.getComponent('itemCollector');
     if (itemCollector && itemCollector.findNearbyItem()) {
@@ -136,29 +180,6 @@ export class DecisionState {
         const ty = t.y + Math.sin(angle) * radius;
         behavior.changeState(new SoloMoveToState(tx, ty, new EatState()));
         return;
-      }
-    }
-
-    // パーティ内に戦闘中のメンバーがいる場合
-    if (party && party.isInParty()) {
-      const fightingMember = party.getMembers().find(m => {
-        const b = m.getComponent('behavior');
-        return b?.currentState?.constructor.name === 'CombatState';
-      });
-      if (fightingMember) {
-        const combat = entity.getComponent('combat');
-        if (combat) {
-          const allyTarget = fightingMember.getComponent('behavior').currentState.getTarget();
-          if (allyTarget) {
-            const dist = entity.game.spatialQuery.getDistance(entity, allyTarget);
-            if (dist <= combat.chaseRange) {
-              const state = new CombatState();
-              state.target = allyTarget;
-              behavior.changeState(state);
-              return;
-            }
-          }
-        }
       }
     }
 

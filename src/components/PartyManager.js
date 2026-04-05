@@ -12,18 +12,10 @@ export class PartyManager {
 
   update() {
     const dt = this.game.deltaTime;
-    for (const [partyId, party] of this.parties) {
-      this._removeDeadMembers(party);
+    for (const [, party] of this.parties) {
       if (party.destination && party.formationCenter) {
         this._advanceFormationCenter(party, dt);
       }
-    }
-  }
-
-  _removeDeadMembers(party) {
-    const dead = [...party.members].filter(m => m.getComponent('health')?.isDead);
-    for (const member of dead) {
-      this._leave(member);
     }
   }
 
@@ -115,8 +107,8 @@ export class PartyManager {
   _advanceFormationCenter(party, dt) {
     const fc = party.formationCenter;
 
-    // 全員が自分の目標位置（中心点+オフセット）に近づくまで待つ
-    const allGathered = [...party.members].every(member => {
+    // 生きているメンバー全員が自分の目標位置（中心点+オフセット）に近づくまで待つ
+    const allGathered = [...party.members].filter(m => !m.getComponent('health')?.isDead).every(member => {
       const t = member.getComponent('transform');
       if (!t) return true;
       const offset = this._getFormationOffset(party, member);

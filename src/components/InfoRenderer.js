@@ -1,5 +1,7 @@
 import { colors } from '../data/Colors.js';
 
+const SHOW_PARTY_LINES = true;
+
 export class InfoRenderer {
   constructor() {
     this.entity = null;
@@ -102,5 +104,23 @@ lines.push(stateLabel);
         { fill: colors.textColor, fontSize: 12 }
       );
     });
+
+    if (SHOW_PARTY_LINES) this._renderPartyLines(game, transform);
+  }
+
+  _renderPartyLines(game, transform) {
+    const party = this.entity.getComponent('party');
+    if (!party?.isInParty()) return;
+
+    for (const member of party.getMembers()) {
+      if (member === this.entity) continue;
+      const mt = member.getComponent('transform');
+      if (!mt) continue;
+      game.graphics.line(
+        transform.x, transform.y,
+        mt.x, mt.y,
+        { stroke: colors.blue02, strokeWidth: 4, strokeScaleWithZoom: false }
+      );
+    }
   }
 }

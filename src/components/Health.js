@@ -1,3 +1,5 @@
+import { DeadState } from '../states/DeadState.js';
+
 export class Health {
   constructor(maxHealth = 100) {
     this.entity = null;
@@ -30,6 +32,11 @@ export class Health {
     this.currentHealth = Math.min(this.currentHealth + amount, this.maxHealth);
   }
 
+  revive(ratio = 1.0) {
+    this.isDead = false;
+    this.currentHealth = Math.max(1, Math.floor(this.maxHealth * ratio));
+  }
+
   onDeath() {
     if (!this.entity || !this.entity.game) return;
 
@@ -40,7 +47,7 @@ export class Health {
       this.entity.game.markEntityForRemoval(this.entity);
     } else {
       const behavior = this.entity.getComponent('behavior');
-      if (behavior) behavior.disable();
+      if (behavior) behavior.changeState(new DeadState());
     }
   }
 }

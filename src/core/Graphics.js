@@ -79,6 +79,16 @@ export class Graphics {
     }
   }
 
+  line(x1, y1, x2, y2, options = {}) {
+    const { stroke = '#ffffff', strokeWidth = 1 } = options;
+    this.ctx.beginPath();
+    this.ctx.moveTo(x1 * this.scale, y1 * this.scale);
+    this.ctx.lineTo(x2 * this.scale, y2 * this.scale);
+    this.ctx.strokeStyle = stroke;
+    this.ctx.lineWidth = strokeWidth / this.camera.zoom;
+    this.ctx.stroke();
+  }
+
   text(x, y, text, options = {}) {
     const {
       fill = '#ffffff',

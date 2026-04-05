@@ -1,8 +1,8 @@
 import { createMonster } from '../entities/Monster.js';
 import { PulseEffect } from './PulseEffect.js';
 
-const MAX_MONSTERS = 30;
-const SPAWN_COUNT = 5;
+const MAX_MONSTERS = 100;
+const SPAWN_COUNT = 30;
 
 export class MonsterSpawner {
   constructor() {
