@@ -9,7 +9,7 @@ export class Health {
     this.removeOnDeath = true;
   }
 
-  takeDamage(amount) {
+  takeDamage(amount, attacker = null) {
     if (this.isDead) return;
     this.currentHealth -= amount;
 
@@ -23,7 +23,7 @@ export class Health {
     if (this.currentHealth <= 0) {
       this.currentHealth = 0;
       this.isDead = true;
-      this.onDeath();
+      this.onDeath(attacker);
     }
   }
 
@@ -37,11 +37,11 @@ export class Health {
     this.currentHealth = Math.max(1, Math.floor(this.maxHealth * ratio));
   }
 
-  onDeath() {
+  onDeath(attacker = null) {
     if (!this.entity || !this.entity.game) return;
 
     const loot = this.entity.getComponent('loot');
-    if (loot) loot.drop();
+    if (loot) loot.drop(attacker);
 
     if (this.removeOnDeath) {
       this.entity.game.markEntityForRemoval(this.entity);

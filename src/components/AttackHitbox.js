@@ -34,7 +34,7 @@ export class AttackHitbox {
       const health = target.getComponent('health');
       if (!health || health.isDead) continue;
 
-      health.takeDamage(this.damage);
+      health.takeDamage(this.damage, this.ownerEntity);
       this.hitEntities.add(target);
     }
   }
