@@ -1,4 +1,5 @@
 import { colors } from '../data/Colors.js';
+import { getStateLabel } from '../core/StateLabel.js';
 
 const SHOW_PARTY_LINES = true;
 
@@ -6,14 +7,6 @@ export class InfoRenderer {
   constructor() {
     this.entity = null;
     this.showNutrition = true;
-  }
-
-  getStateLabel(state) {
-    const name = state.constructor.name;
-    if (name === 'CombatState' && state.returnState?.constructor.name === 'HuntingState') {
-      return 'Hunt(Combat)';
-    }
-    return name;
   }
 
   isCameraCloseEnough() {
@@ -46,7 +39,7 @@ export class InfoRenderer {
 
     const behavior = this.entity.getComponent('behavior');
     if (behavior?.currentState) {
-      lines.push(this.getStateLabel(behavior.currentState));
+      lines.push(getStateLabel(behavior.currentState));
     }
 
     const eatState = behavior?.currentState?.constructor.name === 'EatState'

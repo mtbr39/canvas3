@@ -5,6 +5,7 @@ const SHOW_DEAD_COLOR = true;
 export class DeadState {
   enter(entity) {
     entity.getComponent('movement')?.stop();
+    entity.getComponent('party')?.detach();
     const shapeRenderer = entity.getComponent('shapeRenderer');
     if (SHOW_DEAD_COLOR && shapeRenderer) {
       this._originalFill = shapeRenderer.options.fill;
@@ -15,6 +16,7 @@ export class DeadState {
   update(_entity) {}
 
   exit(entity) {
+    entity.getComponent('party')?.reattach();
     const shapeRenderer = entity.getComponent('shapeRenderer');
     if (SHOW_DEAD_COLOR && shapeRenderer && this._originalFill !== undefined) {
       shapeRenderer.options.fill = this._originalFill;

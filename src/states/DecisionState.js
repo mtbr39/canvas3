@@ -132,19 +132,17 @@ export class DecisionState {
         const b = m.getComponent('behavior');
         return b?.currentState?.constructor.name === 'CombatState';
       });
-      if (fightingMember) {
-        const combat = entity.getComponent('combat');
-        if (combat) {
-          const allyTarget = fightingMember.getComponent('behavior').currentState.getTarget();
-          if (allyTarget) {
-            const dist = entity.game.spatialQuery.getDistance(entity, allyTarget);
-            if (dist <= combat.chaseRange) {
-              const state = new CombatState();
-              state.target = allyTarget;
-              behavior.changeState(state);
-              return;
-            }
-          }
+      if (fightingMember && entity.getComponent('combat')) {
+        const allyTarget = fightingMember.getComponent('behavior').currentState.getTarget();
+        if (allyTarget) {
+          const combatState = new CombatState();
+          combatState.target = allyTarget;
+          combatState.isAllyTarget = true;
+          const targetTransform = allyTarget.getComponent('transform');
+          const moveState = new SoloMoveToState(targetTransform.x, targetTransform.y, combatState);
+          moveState.label = '仲間の戦闘に加わる';
+          behavior.changeState(moveState);
+          return;
         }
       }
     }

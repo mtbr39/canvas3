@@ -7,6 +7,8 @@ export class PartyMoveToState {
     this.y = y;
   }
 
+  getLabel() { return 'PartyMove'; }
+
   enter(entity) {
     const party = entity.getComponent('party');
     if (party && party.isInParty()) {
