@@ -56,8 +56,19 @@ export class CombatState {
       return;
     }
 
-    // Target fled too far - give up
-    if (game.spatialQuery.getDistance(entity, target) > combat.chaseRange) {
+    // Target fled too far
+    const dist = game.spatialQuery.getDistance(entity, target);
+    if (this.isAllyTarget) {
+      if (dist > combat.joinAllyRange) {
+        // joinAllyRangeまで近づき続ける
+        const targetTransform = target.getComponent('transform');
+        movement.moveTo(targetTransform.x, targetTransform.y);
+        return;
+      }
+      // 十分近づいたら通常の戦闘/逃走ロジックへ
+      this.isAllyTarget = false;
+    }
+    if (dist > combat.chaseRange) {
       behavior.changeState(this.returnState ?? new DecisionState());
       return;
     }

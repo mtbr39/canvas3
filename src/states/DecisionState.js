@@ -138,10 +138,7 @@ export class DecisionState {
           const combatState = new CombatState();
           combatState.target = allyTarget;
           combatState.isAllyTarget = true;
-          const targetTransform = allyTarget.getComponent('transform');
-          const moveState = new SoloMoveToState(targetTransform.x, targetTransform.y, combatState);
-          moveState.label = '仲間の戦闘に加わる';
-          behavior.changeState(moveState);
+          behavior.changeState(combatState);
           return;
         }
       }

@@ -10,6 +10,7 @@ export class Combat {
     this.fleeSpeedMultiplier = FLEE_SPEED_MULTIPLIER;
     this.detectionRange = detectionRange;
     this.chaseRange = chaseRange ?? detectionRange * 1.5;
+    this.joinAllyRange = this.chaseRange * 1.5;
   }
 
   static createAggressive(detectionRange, chaseRange) {
