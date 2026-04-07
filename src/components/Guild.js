@@ -58,19 +58,30 @@ export class Guild {
     const game = this.entity.game;
     const existingTargets = new Set(this.quests.map(q => q.targetEntity));
 
+    // 他ギルドで既に受注済みのターゲットも除外する
     for (const e of game.entities) {
-      const tag = e.getComponent('tag');
-      const health = e.getComponent('health');
-      if (tag?.hasTag('monster') && health && !health.isDead && !existingTargets.has(e)) {
-        return {
-          id: this._questIdCounter++,
-          targetEntity: e,
-          reward: { coins: 30 + Math.floor(Math.random() * 30) },
-          status: 'available',
-          acceptedByPartyId: null,
-        };
+      const guild = e.getComponent('guild');
+      if (guild && guild !== this) {
+        for (const q of guild.quests) {
+          if (q.status === 'active') existingTargets.add(q.targetEntity);
+        }
       }
     }
-    return null;
+
+    const candidates = game.entities.filter(e => {
+      const tag = e.getComponent('tag');
+      const health = e.getComponent('health');
+      return tag?.hasTag('monster') && health && !health.isDead && !existingTargets.has(e);
+    });
+
+    if (candidates.length === 0) return null;
+    const target = candidates[Math.floor(Math.random() * candidates.length)];
+    return {
+      id: this._questIdCounter++,
+      targetEntity: target,
+      reward: { coins: 30 + Math.floor(Math.random() * 30) },
+      status: 'available',
+      acceptedByPartyId: null,
+    };
   }
 }

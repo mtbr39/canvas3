@@ -10,7 +10,6 @@ import { BuyState } from './BuyState.js';
 import { SellState } from './SellState.js';
 import { HuntingState } from './HuntingState.js';
 import { ReviveState } from './ReviveState.js';
-import { QuestState } from './QuestState.js';
 import { ITEMS } from '../data/Items.js';
 import { debug } from '../core/debug.js';
 import { DeadState } from './DeadState.js';
@@ -186,38 +185,40 @@ export class DecisionState {
       return;
     }
 
-    // 依頼中ならQuestStateへ
+    const combat = entity.getComponent('combat');
     const questHolder = entity.getComponent('questHolder');
-    if (questHolder?.hasQuest()) {
-      behavior.changeState(new QuestState());
-      return;
+
+    // 依頼フェーズ処理
+    if (questHolder?.isActive()) {
+      const questAction = this._decideQuestAction(entity, game, party, questHolder);
+      if (questAction) {
+        behavior.changeState(questAction);
+        return;
+      }
     }
 
     // Check if this entity seeks combat
-    const combat = entity.getComponent('combat');
     if (combat && combat.shouldSeekCombat && combat.findNearbyEnemy()) {
       behavior.changeState(new CombatState());
       return;
     }
 
-    // 冒険者で依頼未受注 → 近くのギルドで受注
-    if (combat?.shouldSeekCombat && questHolder) {
+    // 冒険者で依頼未受注 → 近くのギルドへ向かう
+    if (combat?.shouldSeekCombat && questHolder && !questHolder.isActive()) {
       const transform = entity.getComponent('transform');
       const guild = this._findNearestGuild(game, transform.x, transform.y);
       if (guild) {
-        const quest = guild.getComponent('guild').getAvailableQuest();
-        if (quest) {
-          const guildComp = guild.getComponent('guild');
-          guildComp.acceptQuest(quest, party?.partyId ?? null);
-          questHolder.accept(quest, guild);
-          if (party?.isInParty()) {
-            for (const member of party.getMembers()) {
-              if (member !== entity) {
-                member.getComponent('questHolder')?.accept(quest, guild);
-              }
+        questHolder.headTo(guild);
+        if (party?.isInParty()) {
+          for (const member of party.getMembers()) {
+            if (member !== entity) {
+              member.getComponent('questHolder')?.headTo(guild);
             }
           }
-          behavior.changeState(new QuestState());
+        }
+        const questAction = this._decideQuestAction(entity, game, party, questHolder);
+        if (questAction) {
+          behavior.changeState(questAction);
           return;
         }
       }
@@ -264,7 +265,7 @@ export class DecisionState {
     }
 
     // コインが少なければ狩りに行く（攻撃的なエンティティのみ）
-    if (combat && combat.shouldSeekCombat && inventory) {
+    if (combat && combat.shouldSeekCombat && inventory) {  // combatは上で取得済み
       const coins = inventory.findByType('coin');
       const coinCount = coins?.getComponent('itemInfo')?.quantity ?? 0;
       if (coinCount <= HUNT_COIN_THRESHOLD) {
@@ -291,6 +292,115 @@ export class DecisionState {
     } else {
       behavior.changeState(new WanderState());
     }
+  }
+
+  _decideQuestAction(entity, game, party, questHolder) {
+    const quest = questHolder.currentQuest;
+    const transform = entity.getComponent('transform');
+
+    switch (questHolder.phase) {
+      case 'go_to_guild': {
+        const guild = questHolder.pendingGuild;
+        if (!guild) { questHolder.complete(); return null; }
+
+        const guildT = guild.getComponent('transform');
+        const guildC = guild.getComponent('collider');
+        const inGuild = guildC
+          ? Math.abs(transform.x - guildT.x) < guildC.shape.width / 2 &&
+            Math.abs(transform.y - guildT.y) < guildC.shape.height / 2
+          : false;
+
+        if (inGuild) {
+          // ギルドに到着 → 依頼を受注
+          const questAvailable = guild.getComponent('guild').getAvailableQuest();
+          if (questAvailable) {
+            guild.getComponent('guild').acceptQuest(questAvailable, party?.partyId ?? null);
+            questHolder.accept(questAvailable);
+            if (party?.isInParty()) {
+              for (const member of party.getMembers()) {
+                if (member !== entity) member.getComponent('questHolder')?.accept(questAvailable);
+              }
+            }
+            return this._decideQuestAction(entity, game, party, questHolder);
+          } else {
+            // 依頼がなかった
+            questHolder.complete();
+            return null;
+          }
+        }
+        return new PartyMoveToState(guildT.x, guildT.y);
+      }
+
+      case 'travel_to_village': {
+        const targetT = quest.targetEntity.getComponent('transform');
+        const village = this._findNearestVillage(game, targetT.x, targetT.y);
+        if (village && !this._isInsideVillage(village, transform.x, transform.y)) {
+          return this._departToVillage(entity, party, village);
+        }
+        // 村に到着
+        questHolder.advanceTo('check_in');
+        return this._decideQuestAction(entity, game, party, questHolder);
+      }
+
+      case 'check_in': {
+        entity.getComponent('resident')?.checkIn();
+        questHolder.advanceTo('travel_to_target');
+        return this._decideQuestAction(entity, game, party, questHolder);
+      }
+
+      case 'travel_to_target': {
+        const target = quest.targetEntity;
+        if (!target || target.getComponent('health')?.isDead) {
+          questHolder.advanceTo('report');
+          return this._decideQuestAction(entity, game, party, questHolder);
+        }
+        const tt = target.getComponent('transform');
+        return new PartyMoveToState(tt.x, tt.y);
+      }
+
+      case 'report': {
+        const guild = this._findNearestGuild(game, transform.x, transform.y);
+        if (!guild) return null;
+        const guildT = guild.getComponent('transform');
+        const guildC = guild.getComponent('collider');
+        const inGuild = guildC
+          ? Math.abs(transform.x - guildT.x) < guildC.shape.width / 2 &&
+            Math.abs(transform.y - guildT.y) < guildC.shape.height / 2
+          : false;
+        if (inGuild) {
+          guild.getComponent('guild').completeQuest(quest, entity);
+          questHolder.complete();
+          if (party?.isInParty()) {
+            for (const member of party.getMembers()) {
+              if (member !== entity) member.getComponent('questHolder')?.complete();
+            }
+          }
+          return null;
+        }
+        return new PartyMoveToState(guildT.x, guildT.y);
+      }
+    }
+    return null;
+  }
+
+  // 村への出発。現在のチェックインをキャンセルしてから向かう。
+  // 今後「別の村へ移動する」処理はすべてここを経由する。
+  _departToVillage(entity, party, villageEntity) {
+    entity.getComponent('resident')?.leave();
+    if (party?.isInParty()) {
+      for (const member of party.getMembers()) {
+        if (member !== entity) member.getComponent('resident')?.leave();
+      }
+    }
+    const dest = this._getVillageEntryPoint(villageEntity);
+    return new PartyMoveToState(dest.x, dest.y);
+  }
+
+  _isInsideVillage(villageEntity, x, y) {
+    const t = villageEntity.getComponent('transform');
+    const c = villageEntity.getComponent('collider');
+    if (!t || !c || c.shape.type !== 'rect') return false;
+    return Math.abs(x - t.x) < c.shape.width / 2 && Math.abs(y - t.y) < c.shape.height / 2;
   }
 
   _findNearestGuild(game, x = 0, y = 0) {
