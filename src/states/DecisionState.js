@@ -10,6 +10,7 @@ import { BuyState } from './BuyState.js';
 import { SellState } from './SellState.js';
 import { HuntingState } from './HuntingState.js';
 import { ReviveState } from './ReviveState.js';
+import { QuestState } from './QuestState.js';
 import { ITEMS } from '../data/Items.js';
 import { debug } from '../core/debug.js';
 import { DeadState } from './DeadState.js';
@@ -185,11 +186,41 @@ export class DecisionState {
       return;
     }
 
+    // 依頼中ならQuestStateへ
+    const questHolder = entity.getComponent('questHolder');
+    if (questHolder?.hasQuest()) {
+      behavior.changeState(new QuestState());
+      return;
+    }
+
     // Check if this entity seeks combat
     const combat = entity.getComponent('combat');
     if (combat && combat.shouldSeekCombat && combat.findNearbyEnemy()) {
       behavior.changeState(new CombatState());
       return;
+    }
+
+    // 冒険者で依頼未受注 → 近くのギルドで受注
+    if (combat?.shouldSeekCombat && questHolder) {
+      const transform = entity.getComponent('transform');
+      const guild = this._findNearestGuild(game, transform.x, transform.y);
+      if (guild) {
+        const quest = guild.getComponent('guild').getAvailableQuest();
+        if (quest) {
+          const guildComp = guild.getComponent('guild');
+          guildComp.acceptQuest(quest, party?.partyId ?? null);
+          questHolder.accept(quest, guild);
+          if (party?.isInParty()) {
+            for (const member of party.getMembers()) {
+              if (member !== entity) {
+                member.getComponent('questHolder')?.accept(quest, guild);
+              }
+            }
+          }
+          behavior.changeState(new QuestState());
+          return;
+        }
+      }
     }
 
     // 村にいなければ最寄りの村へ向かう
@@ -260,6 +291,22 @@ export class DecisionState {
     } else {
       behavior.changeState(new WanderState());
     }
+  }
+
+  _findNearestGuild(game, x = 0, y = 0) {
+    let nearest = null;
+    let nearestDist = Infinity;
+    for (const entity of game.entities) {
+      if (!entity.getComponent('guild')) continue;
+      const t = entity.getComponent('transform');
+      if (!t) continue;
+      const dist = (t.x - x) ** 2 + (t.y - y) ** 2;
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearest = entity;
+      }
+    }
+    return nearest;
   }
 
   _findNearestVillage(game, x, y) {

@@ -6,6 +6,7 @@ import { ShapeRenderer } from '../components/ShapeRenderer.js';
 import { Inn } from '../components/Inn.js';
 import { Shop } from '../components/Shop.js';
 import Inventory from '../components/Inventory.js';
+import { Guild } from '../components/Guild.js';
 import { colors } from '../data/Colors.js';
 
 export const BUILDING_CONFIGS = {
@@ -28,6 +29,12 @@ export const BUILDING_CONFIGS = {
     stroke: colors.brown01,
     strokeWidth: 2,
     acceptsCategories: ['material'],
+  },
+  guild: {
+    width: 500,
+    height: 400,
+    stroke: colors.purple01,
+    strokeWidth: 3,
   },
 };
 
@@ -53,6 +60,10 @@ export function createBuilding(x, y, type) {
   if (config.acceptsCategories) {
     entity.addComponent('inventory', new Inventory());
     entity.addComponent('shop', new Shop(config.acceptsCategories));
+  }
+
+  if (type === 'guild') {
+    entity.addComponent('guild', new Guild());
   }
 
   return entity;

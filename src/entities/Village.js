@@ -46,6 +46,10 @@ export function createVillage(x, y, name = '') {
   const materialShopCount = Math.max(1, Math.round(MATERIAL_SHOP_DENSITY * area / DENSITY_SCALE + (Math.random() - 0.5)));
 
   const buildings = [];
+  
+  // ギルドは必ず1棟生成する。配置失敗時は村の中心に置く
+  const guildPos = tryPlace(x, y, hw, hh, margin, 'guild', placed) ?? { x, y };
+  buildings.push(createBuilding(guildPos.x, guildPos.y, 'guild'));
 
   for (let i = 0; i < innCount; i++) {
     const pos = tryPlace(x, y, hw, hh, margin, 'inn', placed);

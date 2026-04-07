@@ -19,6 +19,7 @@ import { Resident } from '../components/Resident.js';
 import { Party } from '../components/Party.js';
 import { Nutrition } from '../components/Nutrition.js';
 import { Vitality } from '../components/Vitality.js';
+import { QuestHolder } from '../components/QuestHolder.js';
 import createItem from './Item.js';
 import { give } from '../components/ItemExchanger.js';
 import { colors } from '../data/Colors.js';
@@ -85,7 +86,8 @@ export function createHuman(x, y) {
     .addComponent('resident', new Resident())
     .addComponent('party', new Party())
     .addComponent('nutrition', new Nutrition())
-    .addComponent('vitality', new Vitality());
+    .addComponent('vitality', new Vitality())
+    .addComponent('questHolder', new QuestHolder());
 
   const behavior = entity.getComponent('behavior');
   if (isAdventurer) {

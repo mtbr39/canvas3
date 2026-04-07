@@ -2,6 +2,7 @@ import { colors } from '../data/Colors.js';
 import { getStateLabel } from '../core/StateLabel.js';
 
 const SHOW_PARTY_LINES = true;
+const SHOW_QUEST_TARGET_LINE = true;
 
 export class InfoRenderer {
   constructor() {
@@ -18,12 +19,15 @@ export class InfoRenderer {
   }
 
   render() {
-    if (!this.isVisible()) return;
     const game = this.entity.game;
-
     const transform = this.entity.getComponent('transform');
     const health = this.entity.getComponent('health');
     if (!transform || !health) return;
+
+    if (SHOW_PARTY_LINES) this._renderPartyLines(game, transform);
+    if (SHOW_QUEST_TARGET_LINE) this._renderQuestTargetLine(game, transform);
+
+    if (!this.isVisible()) return;
 
     const collider = this.entity.getComponent('collider');
     let offsetY = 25;
@@ -98,7 +102,25 @@ lines.push(stateLabel);
       );
     });
 
-    if (SHOW_PARTY_LINES) this._renderPartyLines(game, transform);
+  }
+
+  _renderQuestTargetLine(game, transform) {
+    const questHolder = this.entity.getComponent('questHolder');
+    if (!questHolder?.hasQuest()) return;
+
+    const target = questHolder.currentQuest.targetEntity;
+    if (!target) return;
+    const health = target.getComponent('health');
+    if (health?.isDead) return;
+
+    const tt = target.getComponent('transform');
+    if (!tt) return;
+
+    game.graphics.line(
+      transform.x, transform.y,
+      tt.x, tt.y,
+      { stroke: colors.red06, strokeWidth: 3 }
+    );
   }
 
   _renderPartyLines(game, transform) {
@@ -112,7 +134,7 @@ lines.push(stateLabel);
       game.graphics.line(
         transform.x, transform.y,
         mt.x, mt.y,
-        { stroke: colors.blue02, strokeWidth: 4, strokeScaleWithZoom: false }
+        { stroke: colors.blue02, strokeWidth: 3, strokeScaleWithZoom: false }
       );
     }
   }

@@ -86,6 +86,9 @@ export class SellState {
       const canSellHere = this._getCategories().some(cat => shop.acceptsCategory(cat));
       if (!canSellHere) continue;
 
+      const shopCoins = e.getComponent('inventory')?.findByType('coin');
+      if (!shopCoins || shopCoins.getComponent('itemInfo').quantity <= 0) continue;
+
       const t = e.getComponent('transform');
       const dx = t.x - transform.x;
       const dy = t.y - transform.y;
