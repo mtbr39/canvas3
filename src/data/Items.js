@@ -122,7 +122,7 @@ export const ITEMS = {
     name: 'ボスの爪',
     categories: ['weapon'],
     attackType: 'melee',
-    damage: 35,
+    damage: 20,
     cooldown: 1.2,
     hitbox: {
       radius: 50,

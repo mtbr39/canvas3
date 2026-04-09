@@ -19,6 +19,7 @@ const WORLD_WIDTH = 8000;
 const WORLD_HEIGHT = 4000;
 const HUMAN_COUNT = 30;
 const MONSTER_COUNT = 30;
+const BOSS_COUNT = 3;
 const VILLAGE_HUMAN_COUNT = 10;
 const VILLAGE_SPAWN_RADIUS = 800;
 
@@ -37,7 +38,11 @@ for (let i = 0; i < MONSTER_COUNT; i++) {
   game.addEntity(createMonster(x, y));
 }
 
-game.addEntity(createBoss(0, 0));
+for (let i = 0; i < BOSS_COUNT; i++) {
+  const x = (Math.random() - 0.5) * WORLD_WIDTH;
+  const y = (Math.random() - 0.5) * WORLD_HEIGHT;
+  game.addEntity(createBoss(x, y));
+}
 
 const itemTypes = ['sword', 'axe', 'bow', 'staff', 'claw', 'bite'];
 for (let i = 0; i < 30; i++) {

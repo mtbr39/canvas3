@@ -68,7 +68,10 @@ export class CombatState {
       // 十分近づいたら通常の戦闘/逃走ロジックへ
       this.isAllyTarget = false;
     }
-    if (dist > combat.chaseRange) {
+    const stopRange = combat.shouldSeekCombat
+      ? combat.chaseRange
+      : (target.getComponent('combat')?.chaseRange ?? combat.chaseRange) * combat.fleeStopMultiplier;
+    if (dist > stopRange) {
       behavior.changeState(this.returnState ?? new DecisionState());
       return;
     }

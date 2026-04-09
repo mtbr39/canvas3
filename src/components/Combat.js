@@ -8,6 +8,7 @@ export class Combat {
     this.shouldSeekCombat = shouldSeekCombat;
     this.cooldownTimer = 0;
     this.fleeSpeedMultiplier = FLEE_SPEED_MULTIPLIER;
+    this.fleeStopMultiplier = 3.0;
     this.detectionRange = detectionRange;
     this.chaseRange = chaseRange ?? detectionRange * 1.5;
     this.joinAllyRange = this.chaseRange * 1.5;
