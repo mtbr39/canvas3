@@ -50,7 +50,8 @@ export class HomeState {
   }
 
   _randomPointInHome(entity) {
-    const home = entity.getComponent('resident').home;
+    const home = entity.getComponent('resident')?.home;
+    if (!home) return { x: entity.getComponent('transform').x, y: entity.getComponent('transform').y };
     const t = home.getComponent('transform');
     const c = home.getComponent('collider');
     const hw = c.shape.width / 2 * 0.8;

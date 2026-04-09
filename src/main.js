@@ -2,7 +2,7 @@ import { Game } from './core/Game.js';
 import { PartyManager } from './components/PartyManager.js';
 import { MonsterSpawner } from './components/MonsterSpawner.js';
 import { createHumanParty } from './entities/Human.js';
-import { createMonster } from './entities/Monster.js';
+import { createMonster, createBoss } from './entities/Monster.js';
 import createItem from './entities/Item.js';
 import { createLocation } from './entities/Location.js';
 import { createVillage } from './entities/Village.js';
@@ -36,6 +36,8 @@ for (let i = 0; i < MONSTER_COUNT; i++) {
   const y = (Math.random() - 0.5) * WORLD_HEIGHT;
   game.addEntity(createMonster(x, y));
 }
+
+game.addEntity(createBoss(0, 0));
 
 const itemTypes = ['sword', 'axe', 'bow', 'staff', 'claw', 'bite'];
 for (let i = 0; i < 30; i++) {

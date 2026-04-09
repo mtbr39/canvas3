@@ -118,6 +118,19 @@ export const ITEMS = {
     }
   },
 
+  boss_claw: {
+    name: 'ボスの爪',
+    categories: ['weapon'],
+    attackType: 'melee',
+    damage: 35,
+    cooldown: 1.2,
+    hitbox: {
+      radius: 50,
+      distance: 60,
+      duration: 0.25
+    }
+  },
+
   // === 通貨 ===
   coin: {
     name: 'コイン',
