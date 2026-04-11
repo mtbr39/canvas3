@@ -14,12 +14,14 @@ const FIELD_CONFIGS = {
   },
 };
 
-export function createField(x, y, type, name = '') {
+export function createField(x, y, type, name = '', maxMonsters = null, size = null) {
   const config = FIELD_CONFIGS[type] ?? FIELD_CONFIGS.grassland;
-  const location = createLocation(x, y, type, name, config.width, config.height);
+  const width = size ?? config.width;
+  const height = size ?? config.height;
+  const location = createLocation(x, y, type, name, width, height);
 
   const spawner = new FieldSpawner();
-  spawner.maxMonsters = config.maxMonsters;
+  spawner.maxMonsters = maxMonsters ?? config.maxMonsters;
   location.addComponent('fieldSpawner', spawner);
 
   return location;
