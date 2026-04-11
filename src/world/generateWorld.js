@@ -10,7 +10,7 @@ const WORLD_MARGIN = 500;
 
 const VILLAGE_COUNT = 3;
 const VILLAGE_HALF_SIZE = 1500;    // 村の最大サイズ(3000)の半分
-const VILLAGE_MIN_GAP = 2000;      // 村同士の最低限の間隔（端から端）
+const VILLAGE_MIN_GAP = 3000;      // 村同士の最低限の間隔（端から端）
 const VILLAGE_HUMAN_COUNT = 10;
 const VILLAGE_SPAWN_RADIUS = 800;
 
@@ -23,9 +23,11 @@ const FIELD_SIZE_STEPS = [
 const FIELD_FAIL_THRESHOLD = 30;  // この回数連続で配置失敗したら次のサイズに降格
 
 const MOUNTAIN_SIZE_STEPS = [1500, 1000, 600];  // フィールドと同じ大・中・小
-const MOUNTAIN_COUNT = 20;
+const MOUNTAIN_COUNT = 10;
 
-const EXTRA_ROAD_MIN_HOPS = 5;  // これ以下のホップ数のペアはショートカット道を追加しない
+const EXTRA_ROAD_MIN_HOPS = 3;            // これ以下のホップ数のペアはショートカット道を追加しない
+const SHORTCUT_EUCLIDEAN_FACTOR = 2;    // 直線距離閾値 = 平均道路長 × この係数
+const SHORTCUT_ROAD_DIST_FACTOR  = 4.0;  // 道路距離閾値 = そのペアの直線距離 × この係数
 
 const VILLAGE_NAMES = ['北の村', '南の村', '東の村', '西の村', '中央の村'];
 const FIELD_NAMES = ['草原', '森', '荒野', '湿地', '丘陵', '渓谷', '平原', '密林'];
@@ -80,6 +82,20 @@ function segmentsIntersect(ax, ay, bx, by, cx, cy, dx, dy) {
   const t = ((cx - ax) * d2y - (cy - ay) * d2x) / cross;
   const u = ((cx - ax) * d1y - (cy - ay) * d1x) / cross;
   return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+}
+
+// 端点共有を交差扱いしない厳密な交差判定
+function segmentsCrossStrict(ax, ay, bx, by, cx, cy, dx, dy) {
+  const eq = (x1, y1, x2, y2) => Math.abs(x1 - x2) < 1e-6 && Math.abs(y1 - y2) < 1e-6;
+  if (eq(ax, ay, cx, cy) || eq(ax, ay, dx, dy) ||
+      eq(bx, by, cx, cy) || eq(bx, by, dx, dy)) return false;
+  const d1x = bx - ax, d1y = by - ay;
+  const d2x = dx - cx, d2y = dy - cy;
+  const cross = d1x * d2y - d1y * d2x;
+  if (Math.abs(cross) < 1e-10) return false;
+  const t = ((cx - ax) * d2y - (cy - ay) * d2x) / cross;
+  const u = ((cx - ax) * d1y - (cy - ay) * d1x) / cross;
+  return t > 0 && t < 1 && u > 0 && u < 1;
 }
 
 // 線分と矩形（中心座標＋サイズ）の交差判定
@@ -184,6 +200,7 @@ function buildRoadEntities(villageRects, fieldRects, mountainObstacles) {
 
   const roads = [];
   const mstEdges = new Set();
+  const edgeList = []; // { i, j, waypoints } — 全道路のエッジ記録
   const inTree = new Set();
   inTree.add(0);
 
@@ -210,6 +227,7 @@ function buildRoadEntities(villageRects, fieldRects, mountainObstacles) {
     const waypoints = buildPath(a.x, a.y, b.x, b.y, mountainObstacles);
     roads.push(createRoad(waypoints));
     mstEdges.add(`${Math.min(bestFrom, bestTo)}-${Math.max(bestFrom, bestTo)}`);
+    edgeList.push({ i: bestFrom, j: bestTo, waypoints });
   }
 
   // MST の隣接リストを構築
@@ -255,16 +273,29 @@ function buildRoadEntities(villageRects, fieldRects, mountainObstacles) {
     return Math.min(t1, t2) < 1 && Math.max(t1, t2) > 0;
   }
 
+  // 同一直線上の重なりだけ禁止（shortcut 用：山の迂回は許可）
+  function collinearOverlapsExistingRoad(waypoints) {
+    for (let k = 0; k < waypoints.length - 1; k++) {
+      const a = waypoints[k], b = waypoints[k + 1];
+      for (const [c, d] of existingSegments) {
+        if (segmentsOverlap(a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y)) return true;
+      }
+    }
+    return false;
+  }
+
+  // 交差も含めて既存道と重なるか（extra roads 用：端点共有は許可）
   function overlapsExistingRoad(waypoints) {
     for (let k = 0; k < waypoints.length - 1; k++) {
       const a = waypoints[k], b = waypoints[k + 1];
       for (const [c, d] of existingSegments) {
         if (segmentsOverlap(a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y)) return true;
-        if (segmentsIntersect(a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y)) return true;
+        if (segmentsCrossStrict(a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y)) return true;
       }
     }
     return false;
   }
+
 
   // ホップ数が遠く、かつ既存道と重ならないペアを追加
   const EXTRA_ROADS = Math.max(2, Math.floor(rects.length / 4));
@@ -284,8 +315,69 @@ function buildRoadEntities(villageRects, fieldRects, mountainObstacles) {
     const waypoints = buildPath(points[i].x, points[i].y, points[j].x, points[j].y, mountainObstacles);
     if (overlapsExistingRoad(waypoints)) continue;
     roads.push(createRoad(waypoints));
+    edgeList.push({ i, j, waypoints });
     for (let k = 0; k < waypoints.length - 1; k++) {
       existingSegments.push([waypoints[k], waypoints[k + 1]]);
+    }
+  }
+
+  // 道路グラフを構築（エッジ重みはウェイポイントの実距離）
+  function waypointLength(wp) {
+    let d = 0;
+    for (let k = 0; k < wp.length - 1; k++) d += dist(wp[k], wp[k + 1]);
+    return d;
+  }
+
+  const roadGraph = Array.from({ length: rects.length }, () => []);
+  for (const { i, j, waypoints: wp } of edgeList) {
+    const d = waypointLength(wp);
+    roadGraph[i].push({ node: j, d });
+    roadGraph[j].push({ node: i, d });
+  }
+
+  function dijkstraRoad(start) {
+    const d = new Array(rects.length).fill(Infinity);
+    const visited = new Array(rects.length).fill(false);
+    d[start] = 0;
+    for (let step = 0; step < rects.length; step++) {
+      let u = -1;
+      for (let i = 0; i < rects.length; i++) {
+        if (!visited[i] && d[i] < Infinity && (u === -1 || d[i] < d[u])) u = i;
+      }
+      if (u === -1) break;
+      visited[u] = true;
+      for (const { node, d: w } of roadGraph[u]) {
+        if (d[u] + w < d[node]) d[node] = d[u] + w;
+      }
+    }
+    return d;
+  }
+
+  // 平均道路長から閾値を計算
+  const avgRoadLen = edgeList.reduce((sum, { waypoints: wp }) => sum + waypointLength(wp), 0) / edgeList.length;
+  const shortcutMaxEuclidean = avgRoadLen * SHORTCUT_EUCLIDEAN_FACTOR;
+
+
+  // 直線距離が近いのに道路距離が遠いペアをショートカット道でつなぐ
+  for (let i = 0; i < rects.length; i++) {
+    // i の近隣ペアが存在しなければ Dijkstra をスキップ
+    const hasNearby = points.some((p, j) => j !== i && dist(points[i], p) <= shortcutMaxEuclidean);
+    if (!hasNearby) continue;
+    const roadDists = dijkstraRoad(i);
+    for (let j = i + 1; j < rects.length; j++) {
+      const euclidean = dist(points[i], points[j]);
+      if (euclidean > shortcutMaxEuclidean) continue;
+      if (roadDists[j] <= euclidean * SHORTCUT_ROAD_DIST_FACTOR) continue;
+      const waypoints = buildPath(points[i].x, points[i].y, points[j].x, points[j].y, mountainObstacles);
+      if (collinearOverlapsExistingRoad(waypoints)) continue;
+      roads.push(createRoad(waypoints));
+      edgeList.push({ i, j, waypoints });
+      const d = waypointLength(waypoints);
+      roadGraph[i].push({ node: j, d });
+      roadGraph[j].push({ node: i, d });
+      for (let k = 0; k < waypoints.length - 1; k++) {
+        existingSegments.push([waypoints[k], waypoints[k + 1]]);
+      }
     }
   }
 
