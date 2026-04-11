@@ -1,6 +1,7 @@
 import { createVillage } from '../entities/Village.js';
 import { createField } from '../entities/Field.js';
 import { createHumanParty } from '../entities/Human.js';
+import { createMountain } from '../entities/Mountain.js';
 
 const WORLD_WIDTH = 20000;
 const WORLD_HEIGHT = 20000;
@@ -19,6 +20,9 @@ const FIELD_SIZE_STEPS = [
   { halfSize:  600, maxMonsters:  7 },  // 小（1200x1200）
 ];
 const FIELD_FAIL_THRESHOLD = 30;  // この回数連続で配置失敗したら次のサイズに降格
+
+const MOUNTAIN_SIZE_STEPS = [1500, 1000, 600];  // フィールドと同じ大・中・小
+const MOUNTAIN_COUNT = 10;
 
 const VILLAGE_NAMES = ['北の村', '南の村', '東の村', '西の村', '中央の村'];
 const FIELD_NAMES = ['草原', '森', '荒野', '湿地', '丘陵', '渓谷', '平原', '密林'];
@@ -65,7 +69,16 @@ function nearestDist(point, positions) {
 }
 
 export function generateWorld(game) {
-  const villagePositions = placeRects(VILLAGE_COUNT, VILLAGE_HALF_SIZE, [], VILLAGE_MIN_GAP);
+  // 山を最初に配置（山同士は重なりOK）
+  const mountainObstacles = [];
+  for (let i = 0; i < MOUNTAIN_COUNT; i++) {
+    const halfSize = MOUNTAIN_SIZE_STEPS[Math.floor(Math.random() * MOUNTAIN_SIZE_STEPS.length)];
+    const p = randomWorldPos();
+    mountainObstacles.push({ pos: p, halfSize });
+    game.addEntity(createMountain(p.x, p.y, halfSize * 2));
+  }
+
+  const villagePositions = placeRects(VILLAGE_COUNT, VILLAGE_HALF_SIZE, mountainObstacles, VILLAGE_MIN_GAP);
   const villageObstacles = villagePositions.map(pos => ({ pos, halfSize: VILLAGE_HALF_SIZE }));
 
   const shuffledVillageNames = shuffle(VILLAGE_NAMES);
@@ -89,7 +102,7 @@ export function generateWorld(game) {
 
   // サイズを段階的に落としながら、置けなくなるまでフィールドを配置する
   const placedFields = []; // { pos, halfSize }
-  const fieldObstacles = [...villageObstacles];
+  const fieldObstacles = [...mountainObstacles, ...villageObstacles];
   const fieldNames = shuffle(FIELD_NAMES);
   let nameIndex = 0;
 
