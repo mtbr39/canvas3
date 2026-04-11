@@ -99,36 +99,68 @@ function segmentIntersectsRect(ax, ay, bx, by, rx, ry, rw, rh) {
   );
 }
 
-// 山を迂回するウェイポイント列を生成する（矩形コーナー迂回）
-function buildPath(ax, ay, bx, by, mountains, margin = 300, depth = 0) {
-  if (depth > 12) return [{ x: ax, y: ay }, { x: bx, y: by }];
+// 山を迂回するウェイポイント列を生成する（視認グラフ + Dijkstra法）
+function buildPath(ax, ay, bx, by, mountains, margin = 300) {
+  const src = { x: ax, y: ay };
+  const dst = { x: bx, y: by };
 
+  // 全山のコーナーを候補ノードとして収集（境界より1単位外）
+  const nodes = [src, dst];
   for (const { pos, halfSize } of mountains) {
-    const expanded = halfSize + margin;
-    if (!segmentIntersectsRect(ax, ay, bx, by, pos.x, pos.y, expanded * 2, expanded * 2)) continue;
-
-    // 4隅のウェイポイント候補
-    const corners = [
-      { x: pos.x - expanded, y: pos.y - expanded },
-      { x: pos.x + expanded, y: pos.y - expanded },
-      { x: pos.x + expanded, y: pos.y + expanded },
-      { x: pos.x - expanded, y: pos.y + expanded },
-    ];
-
-    // 総距離が最短になるコーナーを選ぶ
-    let best = null;
-    let bestDist = Infinity;
-    for (const c of corners) {
-      const d = Math.hypot(c.x - ax, c.y - ay) + Math.hypot(bx - c.x, by - c.y);
-      if (d < bestDist) { bestDist = d; best = c; }
-    }
-
-    const pathA = buildPath(ax, ay, best.x, best.y, mountains, margin, depth + 1);
-    const pathB = buildPath(best.x, best.y, bx, by, mountains, margin, depth + 1);
-    return [...pathA, ...pathB.slice(1)];
+    const e = halfSize + margin + 1;
+    nodes.push(
+      { x: pos.x - e, y: pos.y - e },
+      { x: pos.x + e, y: pos.y - e },
+      { x: pos.x + e, y: pos.y + e },
+      { x: pos.x - e, y: pos.y + e },
+    );
   }
 
-  return [{ x: ax, y: ay }, { x: bx, y: by }];
+  // 2ノード間のセグメントが全山をクリアしているか判定
+  function isVisible(a, b) {
+    for (const { pos, halfSize } of mountains) {
+      const expanded = halfSize + margin;
+      if (segmentIntersectsRect(a.x, a.y, b.x, b.y, pos.x, pos.y, expanded * 2, expanded * 2)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Dijkstra: src(index 0) → dst(index 1)
+  const n = nodes.length;
+  const distArr = new Array(n).fill(Infinity);
+  const prev = new Array(n).fill(-1);
+  const visited = new Array(n).fill(false);
+  distArr[0] = 0;
+
+  for (let step = 0; step < n; step++) {
+    let u = -1;
+    for (let i = 0; i < n; i++) {
+      if (!visited[i] && distArr[i] < Infinity && (u === -1 || distArr[i] < distArr[u])) u = i;
+    }
+    if (u === -1 || u === 1) break;
+    visited[u] = true;
+
+    for (let v = 0; v < n; v++) {
+      if (visited[v]) continue;
+      if (!isVisible(nodes[u], nodes[v])) continue;
+      const d = distArr[u] + Math.hypot(nodes[v].x - nodes[u].x, nodes[v].y - nodes[u].y);
+      if (d < distArr[v]) {
+        distArr[v] = d;
+        prev[v] = u;
+      }
+    }
+  }
+
+  // パスを復元
+  if (distArr[1] === Infinity) return [src, dst]; // 経路なし（フォールバック）
+
+  const path = [];
+  for (let cur = 1; cur !== -1; cur = prev[cur]) {
+    path.unshift(nodes[cur]);
+  }
+  return path;
 }
 
 // { pos, halfSize } の矩形内でランダムな点を返す
@@ -139,16 +171,16 @@ function randomPointInRect({ pos, halfSize }) {
   };
 }
 
-// 全ノード（村＋フィールド）をMST(Prim法)で接続し、道を生成する
+// 全ノード（村＋フィールド）をMST(Prim法)で接続し、道エンティティの配列を返す
 // 各ノードの接続点は矩形内のランダムな点を使う
-function generateRoads(game, villageRects, fieldRects, mountainObstacles) {
+function buildRoadEntities(villageRects, fieldRects, mountainObstacles) {
   const rects = [...villageRects, ...fieldRects];
-  if (rects.length < 2) return;
+  if (rects.length < 2) return [];
 
   // 各ノードのランダムな接続点を事前に決める
   const points = rects.map(randomPointInRect);
 
-  // Prim法: 村を起点にして全ノードを最短辺で繋いでいく
+  const roads = [];
   const inTree = new Set();
   inTree.add(0);
 
@@ -173,8 +205,10 @@ function generateRoads(game, villageRects, fieldRects, mountainObstacles) {
     const a = points[bestFrom];
     const b = points[bestTo];
     const waypoints = buildPath(a.x, a.y, b.x, b.y, mountainObstacles);
-    game.addEntity(createRoad(waypoints));
+    roads.push(createRoad(waypoints));
   }
+
+  return roads;
 }
 
 export function generateWorld(game) {
@@ -250,5 +284,11 @@ export function generateWorld(game) {
 
   const villageRects = villagePositions.map(pos => ({ pos, halfSize: VILLAGE_HALF_SIZE }));
   const fieldRects   = placedFields.map(({ pos, halfSize }) => ({ pos, halfSize }));
-  generateRoads(game, villageRects, fieldRects, mountainObstacles);
+  const roads = buildRoadEntities(villageRects, fieldRects, mountainObstacles);
+
+  // 道は山の直後・村やフィールドより前に追加して描画順を下にする
+  for (const road of roads) {
+    game.entities.splice(mountainObstacles.length, 0, road);
+    road.game = game;
+  }
 }
