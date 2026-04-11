@@ -12,6 +12,8 @@ import { Tag } from '../components/Tag.js';
 import { InfoRenderer } from '../components/InfoRenderer.js';
 import { FloatingText } from '../components/FloatingText.js';
 import { Loot } from '../components/Loot.js';
+import { PulseEffect } from '../components/PulseEffect.js';
+import { FieldBound } from '../components/FieldBound.js';
 
 export function createMonsterBase(x, y, { health, speed, radius, attack, detectionRange, appearance } = {}) {
   const entity = new Entity();
@@ -28,7 +30,9 @@ export function createMonsterBase(x, y, { health, speed, radius, attack, detecti
     .addComponent('floatingText', new FloatingText())
     .addComponent('equipment', new Equipment(attack ?? 'claw'))
     .addComponent('combat', Combat.createAggressive(detectionRange ?? 150))
-    .addComponent('loot', new Loot());
+    .addComponent('loot', new Loot())
+    .addComponent('pulseEffect', new PulseEffect())
+    .addComponent('fieldBound', new FieldBound());
 
   return entity;
 }

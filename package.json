@@ -1,6 +1,7 @@
 {
   "type": "module",
   "scripts": {
+    "dev": "npx http-server -c-1",
     "test": "node test/eatState.test.js"
   }
 }

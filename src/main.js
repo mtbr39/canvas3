@@ -6,12 +6,13 @@ import { createMonster, createBoss } from './entities/Monster.js';
 import createItem from './entities/Item.js';
 import { createLocation } from './entities/Location.js';
 import { createVillage } from './entities/Village.js';
+import { createField } from './entities/Field.js';
 
 const canvas = document.getElementById('game-canvas');
 const game = new Game(canvas);
 
 game.register('partyManager', new PartyManager());
-game.register('monsterSpawner', new MonsterSpawner());
+// game.register('monsterSpawner', new MonsterSpawner());
 
 console.log('v0323');
 
@@ -32,11 +33,11 @@ while (humanCount < HUMAN_COUNT) {
   humanCount += size;
 }
 
-for (let i = 0; i < MONSTER_COUNT; i++) {
-  const x = (Math.random() - 0.5) * WORLD_WIDTH;
-  const y = (Math.random() - 0.5) * WORLD_HEIGHT;
-  game.addEntity(createMonster(x, y));
-}
+// for (let i = 0; i < MONSTER_COUNT; i++) {
+//   const x = (Math.random() - 0.5) * WORLD_WIDTH;
+//   const y = (Math.random() - 0.5) * WORLD_HEIGHT;
+//   game.addEntity(createMonster(x, y));
+// }
 
 for (let i = 0; i < BOSS_COUNT; i++) {
   const x = (Math.random() - 0.5) * WORLD_WIDTH;
@@ -44,13 +45,13 @@ for (let i = 0; i < BOSS_COUNT; i++) {
   game.addEntity(createBoss(x, y));
 }
 
-const itemTypes = ['sword', 'axe', 'bow', 'staff', 'claw', 'bite'];
-for (let i = 0; i < 30; i++) {
-  const x = (Math.random() - 0.5) * WORLD_WIDTH;
-  const y = (Math.random() - 0.5) * WORLD_HEIGHT;
-  const itemType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
-  game.addEntity(createItem(x, y, itemType));
-}
+// const itemTypes = ['sword', 'axe', 'bow', 'staff', 'claw', 'bite'];
+// for (let i = 0; i < 30; i++) {
+//   const x = (Math.random() - 0.5) * WORLD_WIDTH;
+//   const y = (Math.random() - 0.5) * WORLD_HEIGHT;
+//   const itemType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+//   game.addEntity(createItem(x, y, itemType));
+// }
 
 const villagePositions = [
   { x: 4000, y: 2000, name: '南の村' },
@@ -70,6 +71,15 @@ for (const { x, y, name } of villagePositions) {
     createHumanParty(game, hx, hy, size);
     count += size;
   }
+}
+
+const fieldPositions = [
+  { x: 0, y: 0, type: 'grassland', name: '中央草原' },
+  { x: 2000, y: -2000, type: 'forest', name: '東の森' },
+];
+
+for (const { x, y, type, name } of fieldPositions) {
+  game.addEntity(createField(x, y, type, name));
 }
 
 game.run();
