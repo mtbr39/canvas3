@@ -181,6 +181,7 @@ function buildRoadEntities(villageRects, fieldRects, mountainObstacles) {
   const points = rects.map(randomPointInRect);
 
   const roads = [];
+  const mstEdges = new Set();
   const inTree = new Set();
   inTree.add(0);
 
@@ -205,6 +206,46 @@ function buildRoadEntities(villageRects, fieldRects, mountainObstacles) {
     const a = points[bestFrom];
     const b = points[bestTo];
     const waypoints = buildPath(a.x, a.y, b.x, b.y, mountainObstacles);
+    roads.push(createRoad(waypoints));
+    mstEdges.add(`${Math.min(bestFrom, bestTo)}-${Math.max(bestFrom, bestTo)}`);
+  }
+
+  // MST の隣接リストを構築
+  const adj = Array.from({ length: rects.length }, () => []);
+  for (const key of mstEdges) {
+    const [a, b] = key.split('-').map(Number);
+    adj[a].push(b);
+    adj[b].push(a);
+  }
+
+  // BFS で木上のホップ数を求める
+  function treeHops(start) {
+    const hops = new Array(rects.length).fill(-1);
+    hops[start] = 0;
+    const queue = [start];
+    for (let qi = 0; qi < queue.length; qi++) {
+      const cur = queue[qi];
+      for (const nb of adj[cur]) {
+        if (hops[nb] === -1) { hops[nb] = hops[cur] + 1; queue.push(nb); }
+      }
+    }
+    return hops;
+  }
+
+  // 「木上では遠いのに直線距離が近い」ペアを選んでショートカット道を追加
+  const EXTRA_ROADS = Math.max(2, Math.floor(rects.length / 4));
+  const extras = [];
+  for (let i = 0; i < rects.length; i++) {
+    const hops = treeHops(i);
+    for (let j = i + 1; j < rects.length; j++) {
+      if (mstEdges.has(`${i}-${j}`)) continue;
+      const euclidean = dist(points[i], points[j]);
+      extras.push({ i, j, score: hops[j] / euclidean });
+    }
+  }
+  extras.sort((a, b) => b.score - a.score); // score が高い = 遠回りを大きく短縮できる
+  for (const { i, j } of extras.slice(0, EXTRA_ROADS)) {
+    const waypoints = buildPath(points[i].x, points[i].y, points[j].x, points[j].y, mountainObstacles);
     roads.push(createRoad(waypoints));
   }
 
