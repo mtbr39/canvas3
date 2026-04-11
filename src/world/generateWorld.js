@@ -234,16 +234,39 @@ function buildRoadEntities(villageRects, fieldRects, mountainObstacles) {
     return hops;
   }
 
-  // 既存道（MST）の中間ウェイポイントを収集（山コーナーの座標）
-  const usedWaypoints = new Set();
+  // 既存道のセグメント一覧を収集
+  const existingSegments = [];
   for (const road of roads) {
     const wp = road.getComponent('roadPath')?.waypoints ?? [];
-    for (let k = 1; k < wp.length - 1; k++) {
-      usedWaypoints.add(`${wp[k].x},${wp[k].y}`);
+    for (let k = 0; k < wp.length - 1; k++) {
+      existingSegments.push([wp[k], wp[k + 1]]);
     }
   }
 
-  // ホップ数が遠く、かつ既存道と中間ウェイポイントが被らないペアを追加
+  // 2セグメントが重なっているか（同一直線上かつ区間が重複）
+  function segmentsOverlap(ax, ay, bx, by, cx, cy, dx, dy) {
+    const dx1 = bx - ax, dy1 = by - ay;
+    const cross = (cx - ax) * dy1 - (cy - ay) * dx1;
+    const len2 = dx1 * dx1 + dy1 * dy1;
+    if (len2 === 0) return false;
+    if (cross * cross > len2 * 1) return false; // 非共線（許容誤差 1px）
+    const t1 = (dx1 * (cx - ax) + dy1 * (cy - ay)) / len2;
+    const t2 = (dx1 * (dx - ax) + dy1 * (dy - ay)) / len2;
+    return Math.min(t1, t2) < 1 && Math.max(t1, t2) > 0;
+  }
+
+  function overlapsExistingRoad(waypoints) {
+    for (let k = 0; k < waypoints.length - 1; k++) {
+      const a = waypoints[k], b = waypoints[k + 1];
+      for (const [c, d] of existingSegments) {
+        if (segmentsOverlap(a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y)) return true;
+        if (segmentsIntersect(a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y)) return true;
+      }
+    }
+    return false;
+  }
+
+  // ホップ数が遠く、かつ既存道と重ならないペアを追加
   const EXTRA_ROADS = Math.max(2, Math.floor(rects.length / 4));
   const extras = [];
   for (let i = 0; i < rects.length; i++) {
@@ -259,10 +282,11 @@ function buildRoadEntities(villageRects, fieldRects, mountainObstacles) {
   for (const { i, j } of extras) {
     if (roads.length - (rects.length - 1) >= EXTRA_ROADS) break;
     const waypoints = buildPath(points[i].x, points[i].y, points[j].x, points[j].y, mountainObstacles);
-    const intermediates = waypoints.slice(1, -1);
-    if (intermediates.some(p => usedWaypoints.has(`${p.x},${p.y}`))) continue;
+    if (overlapsExistingRoad(waypoints)) continue;
     roads.push(createRoad(waypoints));
-    for (const p of intermediates) usedWaypoints.add(`${p.x},${p.y}`);
+    for (let k = 0; k < waypoints.length - 1; k++) {
+      existingSegments.push([waypoints[k], waypoints[k + 1]]);
+    }
   }
 
   return roads;
