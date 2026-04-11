@@ -258,7 +258,13 @@ export class DecisionState {
       const hasCoins = inventory?.items.some(item =>
         item.getComponent('itemInfo')?.itemType === 'coin'
       );
-      if (!hasFood && hasCoins) {
+      const shopExists = entity.game.entities.some(e => {
+        const shop = e.getComponent('shop');
+        return shop?.getItemsForSale().some(item =>
+          ITEMS[item.getComponent('itemInfo')?.itemType]?.categories?.includes('food')
+        );
+      });
+      if (!hasFood && hasCoins && shopExists) {
         behavior.changeState(BuyState.category('food'));
         return;
       }
