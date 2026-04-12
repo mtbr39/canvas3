@@ -78,6 +78,14 @@ export class BuyState {
 
   _findNearestShopWith(entity) {
     const transform = entity.getComponent('transform');
+    const village = this._findCurrentVillage(entity.game, transform.x, transform.y);
+    if (!village) return null;
+
+    const vt = village.getComponent('transform');
+    const vc = village.getComponent('collider');
+    const hw = vc.shape.width / 2;
+    const hh = vc.shape.height / 2;
+
     let nearest = null;
     let nearestDistSq = Infinity;
 
@@ -85,13 +93,15 @@ export class BuyState {
       const shop = e.getComponent('shop');
       if (!shop) continue;
 
+      const t = e.getComponent('transform');
+      if (Math.abs(t.x - vt.x) > hw || Math.abs(t.y - vt.y) > hh) continue;
+
       const hasMatch = shop.getItemsForSale().some(item => {
         const info = item.getComponent('itemInfo');
         return info && this._matcher(info.itemType);
       });
       if (!hasMatch) continue;
 
-      const t = e.getComponent('transform');
       const dx = t.x - transform.x;
       const dy = t.y - transform.y;
       const distSq = dx * dx + dy * dy;
@@ -102,5 +112,19 @@ export class BuyState {
     }
 
     return nearest;
+  }
+
+  _findCurrentVillage(game, x, y) {
+    for (const e of game.entities) {
+      const tag = e.getComponent('tag');
+      if (!tag?.hasTag('village')) continue;
+      const t = e.getComponent('transform');
+      const c = e.getComponent('collider');
+      if (!t || !c || c.shape.type !== 'rect') continue;
+      const hw = c.shape.width / 2;
+      const hh = c.shape.height / 2;
+      if (Math.abs(x - t.x) < hw && Math.abs(y - t.y) < hh) return e;
+    }
+    return null;
   }
 }
