@@ -1,6 +1,7 @@
 import { Game } from './core/Game.js';
 import { PartyManager } from './components/PartyManager.js';
 import { MonsterSpawner } from './components/MonsterSpawner.js';
+import { EntityInfoPanel } from './components/EntityInfoPanel.js';
 import { createHumanParty } from './entities/Human.js';
 import { createMonster, createBoss } from './entities/Monster.js';
 import createItem from './entities/Item.js';
@@ -12,6 +13,10 @@ const game = new Game(canvas);
 
 game.register('partyManager', new PartyManager());
 // game.register('monsterSpawner', new MonsterSpawner());
+
+const entityInfoPanel = new EntityInfoPanel();
+game.register('entityInfoPanel', entityInfoPanel);
+entityInfoPanel.setup();
 
 console.log('v0323');
 

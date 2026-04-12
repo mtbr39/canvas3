@@ -153,10 +153,10 @@ export class Camera {
     ctx.restore();
   }
 
-  screenToWorld(screenX, screenY) {
+  screenToWorld(screenX, screenY, scale = 1) {
     return {
-      x: this.x + screenX / this.zoom,
-      y: this.y + screenY / this.zoom
+      x: (screenX / this.zoom + this.x) / scale,
+      y: (screenY / this.zoom + this.y) / scale
     };
   }
 
