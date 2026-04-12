@@ -26,7 +26,7 @@ export class PulseEffect {
     const transform = this.entity.getComponent('transform');
     if (!transform) return;
 
-    const progress = 1 - this.timer / this.duration;
+    const progress = Math.max(0, 1 - this.timer / this.duration);
     const radius = this.maxRadius * progress;
     const alpha = (1 - progress) * 0.8;
 

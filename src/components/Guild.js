@@ -1,5 +1,8 @@
 import createItem from '../entities/Item.js';
 import { give } from './ItemExchanger.js';
+import { createBoss } from '../entities/Monster.js';
+
+const NEARBY_FIELD_RANGE = 5000;
 
 export class Guild {
   constructor() {
@@ -56,29 +59,46 @@ export class Guild {
 
   _generateQuest() {
     const game = this.entity.game;
-    const existingTargets = new Set(this.quests.map(q => q.targetEntity));
 
-    // 他ギルドで既に受注済みのターゲットも除外する
+    const occupiedFields = new Set(this.quests.map(q => q.fieldEntity));
     for (const e of game.entities) {
       const guild = e.getComponent('guild');
       if (guild && guild !== this) {
         for (const q of guild.quests) {
-          if (q.status === 'active') existingTargets.add(q.targetEntity);
+          occupiedFields.add(q.fieldEntity);
         }
       }
     }
 
-    const candidates = game.entities.filter(e => {
-      const tag = e.getComponent('tag');
-      const health = e.getComponent('health');
-      return tag?.hasTag('monster') && health && !health.isDead && !existingTargets.has(e);
+    const guildPos = this.entity.getComponent('transform');
+    const fieldCandidates = game.entities.filter(e => {
+      if (!e.getComponent('fieldSpawner') || occupiedFields.has(e)) return false;
+      const ft = e.getComponent('transform');
+      const dx = ft.x - guildPos.x;
+      const dy = ft.y - guildPos.y;
+      return Math.hypot(dx, dy) <= NEARBY_FIELD_RANGE;
     });
 
-    if (candidates.length === 0) return null;
-    const target = candidates[Math.floor(Math.random() * candidates.length)];
+    if (fieldCandidates.length === 0) return null;
+    const field = fieldCandidates[Math.floor(Math.random() * fieldCandidates.length)];
+
+    const t = field.getComponent('transform');
+    const c = field.getComponent('collider');
+    const hw = c.shape.width / 2;
+    const hh = c.shape.height / 2;
+    const bx = t.x + (Math.random() * 2 - 1) * hw;
+    const by = t.y + (Math.random() * 2 - 1) * hh;
+
+    const boss = createBoss(bx, by);
+    boss.getComponent('tag').add('boss');
+    boss.getComponent('fieldBound').setBounds(t.x, t.y, hw, hh);
+    boss.getComponent('pulseEffect').show();
+    game.addEntity(boss);
+
     return {
       id: this._questIdCounter++,
-      targetEntity: target,
+      targetEntity: boss,
+      fieldEntity: field,
       reward: { coins: 30 + Math.floor(Math.random() * 30) },
       status: 'available',
       acceptedByPartyId: null,
