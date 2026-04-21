@@ -7,7 +7,6 @@ import { createMonster, createBoss } from './entities/Monster.js';
 import createItem from './entities/Item.js';
 import { createLocation } from './entities/Location.js';
 import { generateWorld } from './world/generateWorld.js';
-import { createGrassBackground } from './entities/GrassBackground.js';
 import { createGrassField } from './entities/GrassField.js';
 
 const canvas = document.getElementById('game-canvas');
@@ -58,11 +57,6 @@ for (let i = 0; i < BOSS_COUNT; i++) {
 // }
 
 generateWorld(game);
-
-// 最背面に描画させるため先頭に挿入
-// const grassBg = createGrassBackground();
-// grassBg.game = game;
-// game.entities.unshift(grassBg);
 
 const grassField = createGrassField();
 grassField.game = game;

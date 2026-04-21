@@ -4,7 +4,7 @@
 
 export const colors = {
   // === UI ===
-  backgroundColor: '#306950',
+  backgroundColor: '#9CDF86',
   textColor: '#DEF8CE',
   base01: '#85C266',
 
@@ -24,6 +24,7 @@ export const colors = {
   // === Green ===
   green01: '#77bb77',
   green02: '#66aa66',
+  green03: '#76D76F',
 
   // === Yellow/Orange ===
   yellow01: '#ccbb44',

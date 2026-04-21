@@ -1,4 +1,5 @@
 import { PerlinNoise } from '../core/PerlinNoise.js';
+import { colors } from '../data/Colors.js';
 
 export class GrassField {
   constructor() {
@@ -10,15 +11,15 @@ export class GrassField {
     this.worldHeight = 4000;
 
     // 配置（Perlinノイズでクラスタ状に）
-    this.cellSize = 160;             // グリッド間隔（小さいほど密）
+    this.cellSize = 120;             // グリッド間隔（小さいほど密）
     this.maxPerCell = 3;             // ノイズ最大のセルでの配置数
-    this.placementScale = 0.002;     // ノイズ縮尺（小さいほど模様が大きい）
+    this.placementScale = 0.001;     // ノイズ縮尺（小さいほど模様が大きい）
     this.placementThreshold = 0.0;   // これ未満のセルは草を生やさない
     this.placementNoise = new PerlinNoise(17);
 
     // 三角形
     this.size = 18;
-    this.color = '#6FB86B';
+    this.color = colors.green03;
     this.rotationRandomness = 0.04;   // 0 = 全部とんがりが真上、1 = 完全ランダム
 
     // 揺れ（左から右へ進む波）
@@ -29,8 +30,8 @@ export class GrassField {
 
     // 揺れの包絡（波が始まる場所・終わる場所を決める気流のパケット）
     this.envelopeScale = 0.0008;     // パケットの大きさ（小さいほど巨大）
-    this.envelopeSpeed = 300;        // パケットが左→右へ流れる速さ
-    this.envelopeThreshold = -0.5;  // 風域の割合（下げると同時に波が起きる場所が増える）
+    this.envelopeSpeed = 200;        // パケットが左→右へ流れる速さ
+    this.envelopeThreshold = -0.01;  // 風域の割合（下げると同時に波が起きる場所が増える）
     this.envelopeSharpness = 3.0;    // 包絡の立ち上がりの鋭さ
     this.envelopeNoise = new PerlinNoise(53);
 
