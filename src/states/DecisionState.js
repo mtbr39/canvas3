@@ -258,13 +258,12 @@ export class DecisionState {
       const hasCoins = inventory?.items.some(item =>
         item.getComponent('itemInfo')?.itemType === 'coin'
       );
-      const shopExists = entity.game.entities.some(e => {
-        const shop = e.getComponent('shop');
-        return shop?.getItemsForSale().some(item =>
-          ITEMS[item.getComponent('itemInfo')?.itemType]?.categories?.includes('food')
-        );
-      });
-      if (!hasFood && hasCoins && shopExists) {
+      const transform = entity.getComponent('transform');
+      const currentVillage = transform
+        ? this._findCurrentVillage(game, transform.x, transform.y)
+        : null;
+      const shopReachable = currentVillage && this._villageHasShopSelling(currentVillage, game, 'food');
+      if (!hasFood && hasCoins && shopReachable) {
         behavior.changeState(BuyState.category('food'));
         return;
       }
@@ -400,6 +399,40 @@ export class DecisionState {
     }
     const dest = this._getVillageEntryPoint(villageEntity);
     return new PartyMoveToState(dest.x, dest.y);
+  }
+
+  _findCurrentVillage(game, x, y) {
+    for (const e of game.entities) {
+      const tag = e.getComponent('tag');
+      if (!tag?.hasTag('village')) continue;
+      const t = e.getComponent('transform');
+      const c = e.getComponent('collider');
+      if (!t || !c || c.shape.type !== 'rect') continue;
+      const hw = c.shape.width / 2;
+      const hh = c.shape.height / 2;
+      if (Math.abs(x - t.x) < hw && Math.abs(y - t.y) < hh) return e;
+    }
+    return null;
+  }
+
+  _villageHasShopSelling(villageEntity, game, category) {
+    const vt = villageEntity.getComponent('transform');
+    const vc = villageEntity.getComponent('collider');
+    if (!vt || !vc) return false;
+    const hw = vc.shape.width / 2;
+    const hh = vc.shape.height / 2;
+    for (const e of game.entities) {
+      const shop = e.getComponent('shop');
+      if (!shop) continue;
+      const t = e.getComponent('transform');
+      if (!t) continue;
+      if (Math.abs(t.x - vt.x) > hw || Math.abs(t.y - vt.y) > hh) continue;
+      const hasMatch = shop.getItemsForSale().some(item =>
+        ITEMS[item.getComponent('itemInfo')?.itemType]?.categories?.includes(category)
+      );
+      if (hasMatch) return true;
+    }
+    return false;
   }
 
   _isInsideVillage(villageEntity, x, y) {

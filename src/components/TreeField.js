@@ -11,16 +11,16 @@ export class TreeField {
 
     // 配置（2層のPerlin: 大きな「森らしさ」マップ × 小さな「局所のムラ」）
     this.cellSize = 70;
-    this.maxDensity = 0.5;            // 最も濃い場所での配置確率の上限
+    this.maxDensity = 0.3;            // 最も濃い場所での配置確率の上限
 
     // マクロ: ワールドのどこが森に向いているかを決める（数個の大きな塊）
     this.macroScale = 0.00025;       // ごく小さい値で巨大なパターン
-    this.macroThreshold = 0.05;      // これ未満のマクロ値は完全に開けた場所
-    this.macroNoise = new PerlinNoise(11);
+    this.macroThreshold = 0.01;      // これ未満のマクロ値は完全に開けた場所
+    this.macroNoise = new PerlinNoise(12);
 
     // マイクロ: 森の中の細かな密度ムラ
     this.microScale = 0.0025;
-    this.microThreshold = 0.1;
+    this.microThreshold = 0.05;
     this.microNoise = new PerlinNoise(73);
 
     // 外部から「ここは木が多い」マップを差し込めるようにする

@@ -9,9 +9,9 @@ export class StoneField {
     this.worldHeight = 0;
 
     // クラスタ配置（Perlinノイズで「石が集まる場所」を決める）
-    this.clusterCellSize = 700;       // クラスタ候補のグリッド間隔
-    this.clusterNoiseScale = 0.0006;  // ノイズ縮尺（小さいほど模様が大きい）
-    this.clusterThreshold = 0.05;     // これ未満のセルはクラスタを作らない
+    this.clusterCellSize = 1400;       // クラスタ候補のグリッド間隔
+    this.clusterNoiseScale = 0.02;  // ノイズ縮尺（小さいほど模様が大きい）
+    this.clusterThreshold = 0.01;     // これ未満のセルはクラスタを作らない
     this.clusterNoise = new PerlinNoise(91);
 
     // 外部から「ここは石が多い」マップを差し込めるようにする
@@ -21,14 +21,11 @@ export class StoneField {
     // 各クラスタ内の石の数と広がり
     this.stonesPerClusterMin = 1;
     this.stonesPerClusterMax = 3;
-    this.clusterRadius = 420;
+    this.clusterRadius = 800;
 
-    // サイズ階層（大1：中3：小10 の比率で抽選）
-    this.sizeTiers = [
-      { weight: 1,  rMin: 110, rMax: 170 },  // 大
-      { weight: 3,  rMin: 60,  rMax: 90  },  // 中
-      { weight: 10, rMin: 26,  rMax: 42  },  // 小
-    ];
+    // サイズ範囲（最小〜最大の一様乱数）
+    this.radiusMin = 26;
+    this.radiusMax = 170;
 
     // 配置時の最小距離（Poisson-disk 風に近接抑制）
     this.minGapFactor = 1.15;  // 距離 >= (rA + rB) * factor を要求
@@ -67,14 +64,8 @@ export class StoneField {
     }
   }
 
-  _pickTier() {
-    const totalWeight = this.sizeTiers.reduce((a, t) => a + t.weight, 0);
-    let r = Math.random() * totalWeight;
-    for (const t of this.sizeTiers) {
-      r -= t.weight;
-      if (r <= 0) return t;
-    }
-    return this.sizeTiers[this.sizeTiers.length - 1];
+  _pickRadius() {
+    return this.radiusMin + Math.random() * (this.radiusMax - this.radiusMin);
   }
 
   _makeVertices(radius) {
@@ -123,9 +114,8 @@ export class StoneField {
         const stoneCount = this.stonesPerClusterMin
           + Math.floor(density * (this.stonesPerClusterMax - this.stonesPerClusterMin + 1));
 
-        // クラスタの中心石（大きめになりやすい）
-        const centerTier = Math.random() < 0.4 ? this.sizeTiers[0] : this._pickTier();
-        const centerR = centerTier.rMin + Math.random() * (centerTier.rMax - centerTier.rMin);
+        // クラスタの中心石
+        const centerR = this._pickRadius();
         if (!this._tooClose(cx, cy, centerR, placed)) {
           placed.push({
             x: cx, y: cy, radius: centerR,
@@ -136,8 +126,7 @@ export class StoneField {
 
         // 周辺の石
         for (let k = 0; k < stoneCount - 1; k++) {
-          const tier = this._pickTier();
-          const radius = tier.rMin + Math.random() * (tier.rMax - tier.rMin);
+          const radius = this._pickRadius();
           let placedOne = false;
           for (let attempt = 0; attempt < 8; attempt++) {
             const angle = Math.random() * Math.PI * 2;

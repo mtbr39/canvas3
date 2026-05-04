@@ -11,21 +11,22 @@ export class GrassField {
     this.worldHeight = 0;
 
     // 配置（Perlinノイズでクラスタ状に）
-    this.cellSize = 120;             // グリッド間隔（小さいほど密）
+    this.cellSize = 180;             // グリッド間隔（小さいほど密）
     this.maxPerCell = 3;             // ノイズ最大のセルでの配置数
     this.placementScale = 0.001;     // ノイズ縮尺（小さいほど模様が大きい）
     this.placementThreshold = 0.0;   // これ未満のセルは草を生やさない
     this.placementNoise = new PerlinNoise(17);
 
     // 三角形
-    this.size = 18;
-    this.color = colors.green03;
+    this.size = 24;
+    this.alpha = 0.4;
+    this.color = `rgba(118, 215, 111, ${this.alpha})`; // green03 を半透明に
     this.rotationRandomness = 0.04;   // 0 = 全部とんがりが真上、1 = 完全ランダム
 
     // 揺れ（左から右へ進む波）
     //   位相 = k*x - ω*t   →  phase-constant line は x = (ω/k)*t で右へ移動
-    this.swayAmplitude = 0.5;       // 最大回転量（ラジアン）
-    this.swayTimeFreq = 3.0;         // ω
+    this.swayAmplitude = 2.0;       // 最大回転量（ラジアン）
+    this.swayTimeFreq = 1.5;         // ω
     this.swaySpaceFreq = 0.004;        // k = 空間周波数（波長 = 2π/k、位相速度 = ω/k）
 
     // 揺れの包絡（波が始まる場所・終わる場所を決める気流のパケット）
