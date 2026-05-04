@@ -105,6 +105,29 @@ export class Graphics {
     }
   }
 
+  polyline(points, options = {}) {
+    const {
+      stroke = '#ffffff',
+      strokeWidth = 1,
+      worldSpace = false,
+      lineCap = 'round',
+      lineJoin = 'round',
+    } = options;
+
+    if (!points || points.length < 2) return;
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(points[0].x * this.scale, points[0].y * this.scale);
+    for (let i = 1; i < points.length; i++) {
+      this.ctx.lineTo(points[i].x * this.scale, points[i].y * this.scale);
+    }
+    this.ctx.strokeStyle = stroke;
+    this.ctx.lineCap = lineCap;
+    this.ctx.lineJoin = lineJoin;
+    this.ctx.lineWidth = worldSpace ? strokeWidth * this.scale : strokeWidth / this.camera.zoom;
+    this.ctx.stroke();
+  }
+
   line(x1, y1, x2, y2, options = {}) {
     const { stroke = '#ffffff', strokeWidth = 1, worldSpace = false } = options;
     this.ctx.beginPath();
