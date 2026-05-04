@@ -6,9 +6,9 @@ export class GrassField {
     this.entity = null;
     this.time = 0;
 
-    // 配置範囲
-    this.worldWidth = 8000;
-    this.worldHeight = 4000;
+    // 配置範囲（外部から設定される）
+    this.worldWidth = 0;
+    this.worldHeight = 0;
 
     // 配置（Perlinノイズでクラスタ状に）
     this.cellSize = 120;             // グリッド間隔（小さいほど密）
@@ -35,7 +35,32 @@ export class GrassField {
     this.envelopeSharpness = 3.0;    // 包絡の立ち上がりの鋭さ
     this.envelopeNoise = new PerlinNoise(53);
 
+    // この値以上のズームでないと描画しない（離れて見ると草は意味がない）
+    this.minZoom = 0.4;
+
     this.blades = null;
+  }
+
+  _isVisible() {
+    return this.entity.game.camera.zoom >= this.minZoom;
+  }
+
+  _viewportBounds() {
+    const game = this.entity.game;
+    const cam = game.camera;
+    const graphics = game.graphics;
+    const dpr = graphics.dpr;
+    const viewW = game.canvas.width / dpr;
+    const viewH = game.canvas.height / dpr;
+    const tl = cam.screenToWorld(0, 0, graphics.scale);
+    const br = cam.screenToWorld(viewW, viewH, graphics.scale);
+    const margin = this.size * 2;
+    return {
+      left:   tl.x - margin,
+      right:  br.x + margin,
+      top:    tl.y - margin,
+      bottom: br.y + margin,
+    };
   }
 
   update() {
@@ -43,6 +68,7 @@ export class GrassField {
   }
 
   render() {
+    if (!this._isVisible()) return;
     if (!this.blades) this._generateBlades();
 
     const graphics = this.entity.game.graphics;
@@ -51,8 +77,11 @@ export class GrassField {
     const k = this.swaySpaceFreq;
     const envShiftX = -this.envelopeSpeed * t;
     const envS = this.envelopeScale;
+    const view = this._viewportBounds();
 
     for (const b of this.blades) {
+      if (b.x < view.left || b.x > view.right || b.y < view.top || b.y > view.bottom) continue;
+
       const env = this._envelope(b.x, b.y, envShiftX, envS);
       if (env <= 0) {
         graphics.triangle(b.x, b.y, b.size, { fill: this.color, rotation: b.baseRot });

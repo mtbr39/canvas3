@@ -79,6 +79,32 @@ export class Graphics {
     }
   }
 
+  polygon(x, y, vertices, options = {}) {
+    const { fill, stroke, strokeWidth = 1, strokeScaleWithZoom = false } = options;
+
+    if (!vertices || vertices.length < 3) return;
+
+    this.ctx.beginPath();
+    for (let i = 0; i < vertices.length; i++) {
+      const px = (x + vertices[i].x) * this.scale;
+      const py = (y + vertices[i].y) * this.scale;
+      i === 0 ? this.ctx.moveTo(px, py) : this.ctx.lineTo(px, py);
+    }
+    this.ctx.closePath();
+
+    if (fill) {
+      this.ctx.fillStyle = fill;
+      this.ctx.fill();
+    }
+
+    if (stroke) {
+      this.ctx.strokeStyle = stroke;
+      const divisor = strokeScaleWithZoom ? this.dpr : this.camera.zoom * this.dpr;
+      this.ctx.lineWidth = strokeWidth / divisor;
+      this.ctx.stroke();
+    }
+  }
+
   line(x1, y1, x2, y2, options = {}) {
     const { stroke = '#ffffff', strokeWidth = 1, worldSpace = false } = options;
     this.ctx.beginPath();

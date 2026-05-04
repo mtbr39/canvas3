@@ -25,6 +25,8 @@ export const colors = {
   green01: '#77bb77',
   green02: '#66aa66',
   green03: '#76D76F',
+  green04: '#3d7a3d',
+  green05: '#2d5a2d',
 
   // === Yellow/Orange ===
   yellow01: '#ccbb44',

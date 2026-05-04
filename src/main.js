@@ -7,7 +7,7 @@ import { createMonster, createBoss } from './entities/Monster.js';
 import createItem from './entities/Item.js';
 import { createLocation } from './entities/Location.js';
 import { generateWorld } from './world/generateWorld.js';
-import { createGrassField } from './entities/GrassField.js';
+import { createWorldBackdrop } from './world/WorldBackdrop.js';
 
 const canvas = document.getElementById('game-canvas');
 const game = new Game(canvas);
@@ -58,8 +58,6 @@ for (let i = 0; i < BOSS_COUNT; i++) {
 
 generateWorld(game);
 
-const grassField = createGrassField();
-grassField.game = game;
-game.entities.unshift(grassField);
+createWorldBackdrop(game);
 
 game.run();
