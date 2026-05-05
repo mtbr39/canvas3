@@ -39,6 +39,11 @@ export class MonsterAppearance {
     this.flashTimer = 0;
     this.flashSpeed = 10;
     this.parts = MonsterAppearance.generateParts({ hasWings });
+
+    // 影
+    this.shadowColor = 'rgba(20, 25, 35, 0.3)';
+    this.shadowOffsetFactorX = 0.40;
+    this.shadowOffsetFactorY = 0.20;
   }
 
   flash(duration = 0.5) {
@@ -71,6 +76,25 @@ export class MonsterAppearance {
     const angle = direction + Math.PI / 2;
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
+
+    // 影: 塗り部品をすべて1つのパスにまとめて1回だけ塗る（重なりが暗くならない）
+    const shadowOX = r * this.shadowOffsetFactorX;
+    const shadowOY = r * this.shadowOffsetFactorY;
+    const shadowShapes = [];
+    for (const part of this.parts) {
+      if (!part.isFill) continue;
+      const px = x + (part.offsetX * cos - part.offsetY * sin) * r + shadowOX;
+      const py = y + (part.offsetX * sin + part.offsetY * cos) * r + shadowOY;
+      const pr = part.sizeRatio * r;
+      if (part.type === 'circle') {
+        shadowShapes.push({ type: 'circle', x: px, y: py, r: pr });
+      } else if (part.type === 'rect') {
+        shadowShapes.push({ type: 'rect', x: px, y: py, w: pr * 2, h: pr * 2 });
+      } else if (part.type === 'triangle') {
+        shadowShapes.push({ type: 'triangle', x: px, y: py, r: pr, rotation: (part.rotation || 0) + angle });
+      }
+    }
+    game.graphics.shapeUnion(shadowShapes, { fill: this.shadowColor });
 
     for (const part of this.parts) {
       const px = x + (part.offsetX * cos - part.offsetY * sin) * r;

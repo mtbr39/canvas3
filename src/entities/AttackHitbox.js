@@ -15,7 +15,7 @@ export function createAttackHitbox(x, y, radius, damage, ownerEntity, duration =
     .addComponent('collider', new Collider({ type: 'circle', radius }))
     .addComponent('tag', new Tag('attack'))
     .addComponent('attackHitbox', new AttackHitbox(damage, ownerEntity, duration))
-    .addComponent('shapeRenderer', new ShapeRenderer({ fill: colors.gray04 }));
+    .addComponent('shapeRenderer', new ShapeRenderer({ fill: colors.gray04, shadow: false }));
 
   if (projectile) {
     entity.addComponent('projectile', new Projectile(

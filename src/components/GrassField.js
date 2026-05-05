@@ -11,7 +11,7 @@ export class GrassField {
     this.worldHeight = 0;
 
     // 配置（Perlinノイズでクラスタ状に）
-    this.cellSize = 120;             // グリッド間隔（小さいほど密）
+    this.cellSize = 160;             // グリッド間隔（小さいほど密）
     this.maxPerCell = 4;             // ノイズ最大のセルでの配置数
     this.placementScale = 0.001;     // ノイズ縮尺（小さいほど模様が大きい）
     this.placementThreshold = -0.1;   // これ未満のセルは草を生やさない

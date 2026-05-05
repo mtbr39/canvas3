@@ -51,7 +51,7 @@ export function createBuilding(x, y, type) {
     .addComponent('transform', new Transform(x, y))
     .addComponent('collider', new Collider({ type: 'rect', width: config.width, height: config.height }))
     .addComponent('tag', new Tag('building').add(type))
-    .addComponent('shapeRenderer', new ShapeRenderer({ stroke: config.stroke, strokeWidth: config.strokeWidth }));
+    .addComponent('shapeRenderer', new ShapeRenderer({ stroke: config.stroke, strokeWidth: config.strokeWidth, shadow: false }));
 
   if (type === 'inn') {
     entity.addComponent('inn', new Inn());

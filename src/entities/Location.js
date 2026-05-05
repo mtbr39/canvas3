@@ -15,7 +15,7 @@ export function createLocation(x, y, type, name = '', width = 1500, height = 150
     .addComponent('transform', new Transform(x, y))
     .addComponent('collider', new Collider({ type: 'rect', width, height }))
     .addComponent('tag', new Tag('location').add(type))
-    .addComponent('shapeRenderer', new ShapeRenderer({ stroke: '#000000', strokeWidth: 1 }))
+    .addComponent('shapeRenderer', new ShapeRenderer({ stroke: '#000000', strokeWidth: 1, shadow: false }))
     .addComponent('locationLabel', label);
 
   return entity;

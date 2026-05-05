@@ -11,7 +11,7 @@ export class TreeField {
 
     // 配置（2層のPerlin: 大きな「森らしさ」マップ × 小さな「局所のムラ」）
     this.cellSize = 70;
-    this.maxDensity = 0.3;            // 最も濃い場所での配置確率の上限
+    this.maxDensity = 0.1;            // 最も濃い場所での配置確率の上限
 
     // マクロ: ワールドのどこが森に向いているかを決める（数個の大きな塊）
     this.macroScale = 0.00025;       // ごく小さい値で巨大なパターン
@@ -28,8 +28,8 @@ export class TreeField {
     this.biomeSampler = null;
 
     // 木のサイズ（葉の半径）
-    this.sizeMin = 32;
-    this.sizeMax = 60;
+    this.sizeMin = 60;
+    this.sizeMax = 120;
 
     // 色（パレットの濃い緑）
     this.foliageColors = [colors.green04, colors.green05, colors.green02];

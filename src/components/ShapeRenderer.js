@@ -5,6 +5,12 @@ export class ShapeRenderer {
     this.visible = true;
     this.flashTimer = 0;
     this.flashSpeed = 10;
+
+    // 影（建物などは shadow:false で無効化できる）
+    this.shadow = options.shadow !== false;
+    this.shadowColor = 'rgba(20, 25, 35, 0.3)';
+    this.shadowOffsetFactorX = 0.40;
+    this.shadowOffsetFactorY = 0.20;
   }
 
   flash(duration = 0.5) {
@@ -34,6 +40,8 @@ export class ShapeRenderer {
     const collider = this.entity.getComponent('collider');
     if (!transform || !collider) return;
 
+    if (this.shadow) this._renderShadow(game, transform, collider);
+
     if (collider.shape.type === 'circle') {
       game.graphics.circle(
         transform.x,
@@ -48,6 +56,25 @@ export class ShapeRenderer {
         collider.shape.width,
         collider.shape.height,
         this.options
+      );
+    }
+  }
+
+  _renderShadow(game, transform, collider) {
+    const r = collider.shape.radius ?? Math.max(collider.shape.width, collider.shape.height) / 2;
+    const ox = r * this.shadowOffsetFactorX;
+    const oy = r * this.shadowOffsetFactorY;
+    const opts = { fill: this.shadowColor };
+
+    if (collider.shape.type === 'circle') {
+      game.graphics.circle(transform.x + ox, transform.y + oy, collider.shape.radius, opts);
+    } else if (collider.shape.type === 'rect') {
+      game.graphics.rect(
+        transform.x + ox,
+        transform.y + oy,
+        collider.shape.width,
+        collider.shape.height,
+        opts
       );
     }
   }

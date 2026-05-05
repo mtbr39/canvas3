@@ -62,6 +62,77 @@ export class Graphics {
     this.ctx.closePath();
   }
 
+  // 複数の図形を1つのパスとしてまとめて塗る（重なり部分が多重に塗られないので半透明でもムラが出ない）
+  // shapes: [{type:'circle', x,y,r}, {type:'rect', x,y,w,h}, {type:'triangle', x,y,r,rotation}]
+  shapeUnion(shapes, options = {}) {
+    const { fill, stroke, strokeWidth = 1, strokeScaleWithZoom = false } = options;
+
+    if (!shapes || shapes.length === 0) return;
+
+    this.ctx.beginPath();
+    for (const s of shapes) {
+      if (s.type === 'circle') {
+        this.ctx.moveTo((s.x + s.r) * this.scale, s.y * this.scale);
+        this.ctx.arc(s.x * this.scale, s.y * this.scale, s.r * this.scale, 0, Math.PI * 2);
+      } else if (s.type === 'rect') {
+        this.ctx.rect(
+          (s.x - s.w / 2) * this.scale,
+          (s.y - s.h / 2) * this.scale,
+          s.w * this.scale,
+          s.h * this.scale
+        );
+      } else if (s.type === 'triangle') {
+        const rot = s.rotation || 0;
+        for (let i = 0; i < 3; i++) {
+          const angle = (Math.PI * 2 / 3) * i + rot;
+          const px = (s.x + Math.cos(angle) * s.r) * this.scale;
+          const py = (s.y + Math.sin(angle) * s.r) * this.scale;
+          i === 0 ? this.ctx.moveTo(px, py) : this.ctx.lineTo(px, py);
+        }
+        this.ctx.closePath();
+      }
+    }
+
+    if (fill) {
+      this.ctx.fillStyle = fill;
+      this.ctx.fill();
+    }
+
+    if (stroke) {
+      this.ctx.strokeStyle = stroke;
+      const divisor = strokeScaleWithZoom ? this.dpr : this.camera.zoom * this.dpr;
+      this.ctx.lineWidth = strokeWidth / divisor;
+      this.ctx.stroke();
+    }
+  }
+
+  ellipse(x, y, radiusX, radiusY, options = {}) {
+    const { fill, stroke, strokeWidth = 1, strokeScaleWithZoom = false } = options;
+
+    this.ctx.beginPath();
+    this.ctx.ellipse(
+      x * this.scale,
+      y * this.scale,
+      radiusX * this.scale,
+      radiusY * this.scale,
+      0, 0, Math.PI * 2
+    );
+
+    if (fill) {
+      this.ctx.fillStyle = fill;
+      this.ctx.fill();
+    }
+
+    if (stroke) {
+      this.ctx.strokeStyle = stroke;
+      const divisor = strokeScaleWithZoom ? this.dpr : this.camera.zoom * this.dpr;
+      this.ctx.lineWidth = strokeWidth / divisor;
+      this.ctx.stroke();
+    }
+
+    this.ctx.closePath();
+  }
+
   rect(x, y, width, height, options = {}) {
     const { fill, stroke, strokeWidth = 1, strokeScaleWithZoom = false } = options;
 
