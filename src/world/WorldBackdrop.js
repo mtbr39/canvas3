@@ -3,6 +3,7 @@ import { createGroundTint } from '../entities/GroundTint.js';
 import { createGrassField } from '../entities/GrassField.js';
 import { createStoneField } from '../entities/StoneField.js';
 import { createTreeField } from '../entities/TreeField.js';
+import { createCloudField } from '../entities/CloudField.js';
 
 // ワールドサイズはここで一元管理
 export const WORLD_WIDTH = 22000;
@@ -53,6 +54,12 @@ export function createWorldBackdrop(game) {
   const layered = [groundTint, grassField, stoneField, treeField];
   for (const e of layered) e.game = game;
   game.entities.unshift(...layered);
+
+  // 雲は最上層に描く（既存エンティティの上）
+  const cloudField = createCloudField();
+  configure(cloudField, 'cloudField', { worldWidth: WORLD_WIDTH, worldHeight: WORLD_HEIGHT });
+  cloudField.game = game;
+  game.entities.push(cloudField);
 }
 
 function configure(entity, componentName, props) {

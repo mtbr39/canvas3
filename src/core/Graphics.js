@@ -35,6 +35,33 @@ export class Graphics {
     this.ctx.closePath();
   }
 
+  // 複数の円を1つのパスとしてまとめて塗る（重なり部分が多重に塗られないので半透明でもムラが出ない）
+  circleUnion(circles, options = {}) {
+    const { fill, stroke, strokeWidth = 1, strokeScaleWithZoom = false } = options;
+
+    if (!circles || circles.length === 0) return;
+
+    this.ctx.beginPath();
+    for (const c of circles) {
+      this.ctx.moveTo((c.x + c.r) * this.scale, c.y * this.scale);
+      this.ctx.arc(c.x * this.scale, c.y * this.scale, c.r * this.scale, 0, Math.PI * 2);
+    }
+
+    if (fill) {
+      this.ctx.fillStyle = fill;
+      this.ctx.fill();
+    }
+
+    if (stroke) {
+      this.ctx.strokeStyle = stroke;
+      const divisor = strokeScaleWithZoom ? this.dpr : this.camera.zoom * this.dpr;
+      this.ctx.lineWidth = strokeWidth / divisor;
+      this.ctx.stroke();
+    }
+
+    this.ctx.closePath();
+  }
+
   rect(x, y, width, height, options = {}) {
     const { fill, stroke, strokeWidth = 1, strokeScaleWithZoom = false } = options;
 

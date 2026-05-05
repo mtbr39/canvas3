@@ -11,15 +11,15 @@ export class GrassField {
     this.worldHeight = 0;
 
     // 配置（Perlinノイズでクラスタ状に）
-    this.cellSize = 180;             // グリッド間隔（小さいほど密）
-    this.maxPerCell = 3;             // ノイズ最大のセルでの配置数
+    this.cellSize = 120;             // グリッド間隔（小さいほど密）
+    this.maxPerCell = 4;             // ノイズ最大のセルでの配置数
     this.placementScale = 0.001;     // ノイズ縮尺（小さいほど模様が大きい）
-    this.placementThreshold = 0.0;   // これ未満のセルは草を生やさない
+    this.placementThreshold = -0.1;   // これ未満のセルは草を生やさない
     this.placementNoise = new PerlinNoise(17);
 
     // 三角形
     this.size = 24;
-    this.alpha = 0.4;
+    this.alpha = 0.6;
     this.color = `rgba(118, 215, 111, ${this.alpha})`; // green03 を半透明に
     this.rotationRandomness = 0.04;   // 0 = 全部とんがりが真上、1 = 完全ランダム
 
