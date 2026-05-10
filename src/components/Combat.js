@@ -8,13 +8,22 @@ const FLEE_SPEED_MULTIPLIER = 3;
 const REACTION_TIME = 0.25;
 
 // 連続回避を防ぐクールダウン [秒]。回避完了から次の回避が許可されるまで
-const DODGE_COOLDOWN = 1.0;
+const DODGE_COOLDOWN = 2.0;
 
 // 1回の回避でずれる距離 [ピクセル相当]
 const DODGE_DISTANCE = 80;
 
-// 回避モーションの所要時間 [秒]。短いほど無敵時間も短い
-const DODGE_DURATION = 0.2;
+// 回避モーションの所要時間 [秒]。短いほどステップが速く、攻撃を避けやすい
+const DODGE_DURATION = 0.5;
+
+// 武器の予備動作の長さ [秒]。武器側は 'fast'/'normal'/'slow' で指定し、実数はここで定義する。
+// fast は REACTION_TIME(0.25) を下回るので回避困難 → 軽量武器の利点
+const WINDUP_BY_SPEED = {
+  fast: 0.5,
+  normal: 1.0,
+  slow: 1.5,
+};
+const DEFAULT_WINDUP_SPEED = 'normal';
 
 // 体力がこの比率を下回ったら近接戦士も「低HP退避モード」に入る
 const LOW_HP_THRESHOLD = 0.35;
@@ -52,11 +61,18 @@ export class Combat {
     return this.dodge !== null;
   }
 
+  // 攻撃の予備動作中は割り込み不可。
+  // 新しい「割り込み不可な動作」を作るときは、ここに条件を足していく。
+  isBusy() {
+    return this.windup !== null;
+  }
+
   // dirX, dirY は呼び出し側（CombatState）が決定した回避方向の単位ベクトル。
   // CombatState は「攻撃者→自分」のベクトルに対して垂直な方向を、左右ランダムに選んで渡す。
   // → 攻撃の軌道に対して横方向にステップするので、攻撃線から外れて被弾を避けられる。
   startDodge(dirX, dirY) {
     if (this.dodge || this.dodgeCooldown > 0) return false;
+    if (this.isBusy()) return false;
     const transform = this.entity.getComponent('transform');
     if (!transform) return false;
 
@@ -200,7 +216,7 @@ export class Combat {
     const dirX = dx / distance;
     const dirY = dy / distance;
 
-    const windupDuration = weapon.windup ?? 0.2;
+    const windupDuration = WINDUP_BY_SPEED[weapon.windupSpeed ?? DEFAULT_WINDUP_SPEED];
 
     this.windup = {
       weapon,
