@@ -115,12 +115,12 @@ export class Combat {
     return new Combat(false, detectionRange, chaseRange);
   }
 
-  getAttackRange() {
-    const equipment = this.entity.getComponent('equipment');
-    if (!equipment) return 100;
-
-    const weapon = equipment.getWeapon();
-    return weapon.attackType === 'ranged' ? 250 : 150;
+  // 近接武器のヒットボックス中心までの距離。
+  // 自分の collider 円と武器の hitbox 円が外接するように置く（自分のサイズ + 武器の半径）。
+  getMeleeHitboxDistance(weapon) {
+    const collider = this.entity.getComponent('collider');
+    const ownRadius = collider?.shape?.type === 'circle' ? collider.shape.radius : 0;
+    return ownRadius + weapon.hitbox.radius;
   }
 
   getWeaponRange() {
@@ -129,7 +129,7 @@ export class Combat {
 
     const weapon = equipment.getWeapon();
     if (weapon.attackType === 'melee') {
-      return weapon.hitbox.distance + weapon.hitbox.radius;
+      return this.getMeleeHitboxDistance(weapon) + weapon.hitbox.radius;
     } else {
       return weapon.projectile.speed * weapon.projectile.duration;
     }
@@ -250,8 +250,9 @@ export class Combat {
   }
 
   performMeleeAttack(transform, dirX, dirY, weapon) {
-    const hitboxX = transform.x + dirX * weapon.hitbox.distance;
-    const hitboxY = transform.y + dirY * weapon.hitbox.distance;
+    const dist = this.getMeleeHitboxDistance(weapon);
+    const hitboxX = transform.x + dirX * dist;
+    const hitboxY = transform.y + dirY * dist;
 
     const game = this.entity.game;
     const hitbox = createAttackHitbox(

@@ -15,8 +15,9 @@ export class CombatIndicator {
     const progress = w.duration > 0 ? 1 - (w.timer / w.duration) : 1;
 
     if (w.weapon.attackType === 'melee') {
-      const cx = transform.x + w.dirX * w.weapon.hitbox.distance;
-      const cy = transform.y + w.dirY * w.weapon.hitbox.distance;
+      const dist = combat.getMeleeHitboxDistance(w.weapon);
+      const cx = transform.x + w.dirX * dist;
+      const cy = transform.y + w.dirY * dist;
       const r = w.weapon.hitbox.radius;
 
       game.graphics.circle(cx, cy, r, {

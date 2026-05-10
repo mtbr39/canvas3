@@ -24,7 +24,7 @@ export function createMonsterBase(x, y, { health, speed, radius, attack, detecti
     .addComponent('transform', new Transform(x, y))
     .addComponent('movement', new Movement(speed ?? 120))
     .addComponent('behavior', new Behavior(new IdleState()))
-    .addComponent('health', new Health(health ?? 500, { regenRate: regenRate ?? 0 }))
+    .addComponent('health', new Health(health ?? 100, { regenRate: regenRate ?? 0 }))
     .addComponent('collider', new Collider({ type: 'circle', radius: radius ?? 15 }))
     .addComponent('appearance', appearance ?? new MonsterAppearance())
     .addComponent('tag', new Tag('monster'))

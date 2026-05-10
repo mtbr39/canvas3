@@ -11,7 +11,6 @@ export const ITEMS = {
     windupSpeed: 'fast',
     hitbox: {
       radius: 35,
-      distance: 45,
       duration: 0.2
     },
     dropVisual: {
@@ -29,7 +28,6 @@ export const ITEMS = {
     windupSpeed: 'slow',
     hitbox: {
       radius: 40,
-      distance: 50,
       duration: 0.3
     },
     dropVisual: {
@@ -83,7 +81,6 @@ export const ITEMS = {
     windupSpeed: 'fast',
     hitbox: {
       radius: 20,
-      distance: 30,
       duration: 0.15
     }
   },
@@ -98,7 +95,6 @@ export const ITEMS = {
     windupSpeed: 'fast',
     hitbox: {
       radius: 25,
-      distance: 30,
       duration: 0.15
     },
     dropVisual: {
@@ -116,7 +112,6 @@ export const ITEMS = {
     windupSpeed: 'normal',
     hitbox: {
       radius: 20,
-      distance: 25,
       duration: 0.2
     },
     dropVisual: {
@@ -134,7 +129,6 @@ export const ITEMS = {
     windupSpeed: 'slow',
     hitbox: {
       radius: 50,
-      distance: 60,
       duration: 0.25
     }
   },
