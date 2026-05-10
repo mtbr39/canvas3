@@ -8,6 +8,7 @@ export const ITEMS = {
     attackType: 'melee',
     damage: 15,
     cooldown: 1.0,
+    windup: 0.3,
     hitbox: {
       radius: 35,
       distance: 45,
@@ -25,6 +26,7 @@ export const ITEMS = {
     attackType: 'melee',
     damage: 25,
     cooldown: 1.5,
+    windup: 0.6,
     hitbox: {
       radius: 40,
       distance: 50,
@@ -42,6 +44,7 @@ export const ITEMS = {
     attackType: 'ranged',
     damage: 12,
     cooldown: 1.2,
+    windup: 0.5,
     projectile: {
       radius: 8,
       speed: 400,
@@ -59,6 +62,7 @@ export const ITEMS = {
     attackType: 'ranged',
     damage: 20,
     cooldown: 2.0,
+    windup: 0.7,
     projectile: {
       radius: 12,
       speed: 300,
@@ -76,6 +80,7 @@ export const ITEMS = {
     attackType: 'melee',
     damage: 5,
     cooldown: 1.0,
+    windup: 0.2,
     hitbox: {
       radius: 20,
       distance: 30,
@@ -90,6 +95,7 @@ export const ITEMS = {
     attackType: 'melee',
     damage: 8,
     cooldown: 0.8,
+    windup: 0.25,
     hitbox: {
       radius: 25,
       distance: 30,
@@ -107,6 +113,7 @@ export const ITEMS = {
     attackType: 'melee',
     damage: 12,
     cooldown: 1.0,
+    windup: 0.35,
     hitbox: {
       radius: 20,
       distance: 25,
@@ -124,6 +131,7 @@ export const ITEMS = {
     attackType: 'melee',
     damage: 20,
     cooldown: 1.2,
+    windup: 0.5,
     hitbox: {
       radius: 50,
       distance: 60,

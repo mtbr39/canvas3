@@ -1,4 +1,5 @@
 import { DecisionState } from './DecisionState.js';
+import { DodgeState } from './DodgeState.js';
 
 export class CombatState {
   constructor(returnState = null) {
@@ -41,6 +42,23 @@ export class CombatState {
     const behavior = entity.getComponent('behavior');
 
     if (!combat || !transform || !movement || !behavior) return;
+
+    // 回避判定: 反応時間が満ちて回避クールダウンも明けていれば回避へ
+    const dodgeFrom = combat.consumeDodgePlan();
+    if (dodgeFrom) {
+      const fromT = dodgeFrom.getComponent('transform');
+      if (fromT) {
+        const dx = transform.x - fromT.x;
+        const dy = transform.y - fromT.y;
+        const d = Math.sqrt(dx * dx + dy * dy) || 1;
+        // 攻撃線に対して垂直方向へ。左右はランダム
+        const sign = Math.random() < 0.5 ? 1 : -1;
+        const perpX = -dy / d * sign;
+        const perpY = dx / d * sign;
+        behavior.changeState(new DodgeState(this, perpX, perpY));
+        return;
+      }
+    }
 
     // Periodically recheck for targets
     this.checkTimer += game.deltaTime;
@@ -92,6 +110,23 @@ export class CombatState {
     }
 
     const weaponRange = combat.getWeaponRange();
+    const kiteRange = combat.getKiteRange();
+
+    // 近すぎる場合は離れながら攻撃する
+    if (kiteRange > 0 && centerDistance < kiteRange) {
+      const dx = transform.x - targetTransform.x;
+      const dy = transform.y - targetTransform.y;
+      const d = Math.sqrt(dx * dx + dy * dy) || 1;
+      const KITE_DISTANCE = 150;
+      movement.moveTo(
+        transform.x + (dx / d) * KITE_DISTANCE,
+        transform.y + (dy / d) * KITE_DISTANCE
+      );
+      if (centerDistance <= weaponRange && combat.canAttack()) {
+        combat.attack(target);
+      }
+      return;
+    }
 
     // Within weapon range - try to attack
     if (centerDistance <= weaponRange) {

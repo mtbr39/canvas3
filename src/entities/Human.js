@@ -4,6 +4,7 @@ import { Movement } from '../components/Movement.js';
 import { Behavior } from '../components/Behavior.js';
 import { Health } from '../components/Health.js';
 import { Combat } from '../components/Combat.js';
+import { CombatIndicator } from '../components/CombatIndicator.js';
 import { Equipment } from '../components/Equipment.js';
 import { IdleState } from '../states/IdleState.js';
 import { ShapeRenderer } from '../components/ShapeRenderer.js';
@@ -80,6 +81,7 @@ export function createHuman(x, y) {
     .addComponent('tag', new Tag('human'))
     .addComponent('infoRenderer', new InfoRenderer())
     .addComponent('floatingText', new FloatingText())
+    .addComponent('combatIndicator', new CombatIndicator())
     .addComponent('inventory', new Inventory())
     .addComponent('itemCollector', new ItemCollector())
     .addComponent('carriedItemsFollower', new CarriedItemsFollower())

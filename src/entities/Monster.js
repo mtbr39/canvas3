@@ -4,6 +4,7 @@ import { Movement } from '../components/Movement.js';
 import { Behavior } from '../components/Behavior.js';
 import { Health } from '../components/Health.js';
 import { Combat } from '../components/Combat.js';
+import { CombatIndicator } from '../components/CombatIndicator.js';
 import { Equipment } from '../components/Equipment.js';
 import { IdleState } from '../states/IdleState.js';
 import { MonsterAppearance } from '../components/MonsterAppearance.js';
@@ -28,6 +29,7 @@ export function createMonsterBase(x, y, { health, speed, radius, attack, detecti
     .addComponent('tag', new Tag('monster'))
     .addComponent('infoRenderer', new InfoRenderer())
     .addComponent('floatingText', new FloatingText())
+    .addComponent('combatIndicator', new CombatIndicator())
     .addComponent('equipment', new Equipment(attack ?? 'claw'))
     .addComponent('combat', Combat.createAggressive(detectionRange ?? 150))
     .addComponent('loot', new Loot())
