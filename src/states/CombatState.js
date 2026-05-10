@@ -1,5 +1,4 @@
 import { DecisionState } from './DecisionState.js';
-import { DodgeState } from './DodgeState.js';
 
 export class CombatState {
   constructor(returnState = null) {
@@ -11,6 +10,7 @@ export class CombatState {
 
   enter(entity) {
     this.checkTimer = 0;
+    this.kiting = false;
     if (!this.target) this.findTarget(entity);
     entity.getComponent('party')?.clearDestination();
     const movement = entity.getComponent('movement');
@@ -43,20 +43,24 @@ export class CombatState {
 
     if (!combat || !transform || !movement || !behavior) return;
 
-    // 回避判定: 反応時間が満ちて回避クールダウンも明けていれば回避へ
+    // 回避中は他の行動を抑止
+    if (combat.isDodging()) return;
+
+    // 回避判定: 反応時間が満ちて回避クールダウンも明けていれば回避を起動
     const dodgeFrom = combat.consumeDodgePlan();
     if (dodgeFrom) {
       const fromT = dodgeFrom.getComponent('transform');
       if (fromT) {
+        // 攻撃者→自分の方向ベクトル (dx, dy) を求め、それに垂直な単位ベクトルを作る。
+        // 2D で (dx, dy) に垂直なのは (-dy, dx) と (dy, -dx) の2つ → どちらに避けるかは sign でランダムに選ぶ。
+        // 結果として「攻撃の軌道線に対して真横」へステップする向きが決まる。
         const dx = transform.x - fromT.x;
         const dy = transform.y - fromT.y;
         const d = Math.sqrt(dx * dx + dy * dy) || 1;
-        // 攻撃線に対して垂直方向へ。左右はランダム
         const sign = Math.random() < 0.5 ? 1 : -1;
         const perpX = -dy / d * sign;
         const perpY = dx / d * sign;
-        behavior.changeState(new DodgeState(this, perpX, perpY));
-        return;
+        if (combat.startDodge(perpX, perpY)) return;
       }
     }
 
@@ -112,11 +116,24 @@ export class CombatState {
     const weaponRange = combat.getWeaponRange();
     const kiteRange = combat.getKiteRange();
 
+    // ヒステリシス: 離脱開始の閾値(kiteRange)と離脱解除の閾値(kiteRange * 1.6)を分け、
+    // 境界付近で「離れる→止まる→近づかれる→離れる」という反復が起きないようにする。
+    // 1.6 はチューニング値: 大きいほど離脱を長く続ける（粘る）、小さいほど早く戦闘距離に戻る。
+    if (kiteRange > 0) {
+      if (centerDistance < kiteRange) this.kiting = true;
+      else if (centerDistance > kiteRange * 1.6) this.kiting = false;
+    } else {
+      this.kiting = false;
+    }
+
     // 近すぎる場合は離れながら攻撃する
-    if (kiteRange > 0 && centerDistance < kiteRange) {
+    if (this.kiting) {
       const dx = transform.x - targetTransform.x;
       const dy = transform.y - targetTransform.y;
       const d = Math.sqrt(dx * dx + dy * dy) || 1;
+      // 敵から離れる方向に毎フレーム新しい移動先を再計算するので、
+      // 「現在地から KITE_DISTANCE 先」に向かって連続的に後退し続ける。
+      // 値はピクセル相当。大きいほど一回の指示で長く下がるが、毎フレーム上書きされるので実効的には方向ベクトル。
       const KITE_DISTANCE = 150;
       movement.moveTo(
         transform.x + (dx / d) * KITE_DISTANCE,
