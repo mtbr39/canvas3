@@ -52,14 +52,27 @@ export function checkEatCondition(entity) {
 const SELL_FOOD_THRESHOLD = 5;
 const HUNT_COIN_THRESHOLD = 10;
 
-function checkSellCondition(inventory) {
+function _shopAcceptsCategoryExists(game, category) {
+  for (const e of game.entities) {
+    const shop = e.getComponent('shop');
+    if (!shop) continue;
+    if (!shop.acceptsCategory(category)) continue;
+    const coins = e.getComponent('inventory')?.findByType('coin');
+    if (coins && coins.getComponent('itemInfo').quantity > 0) return true;
+  }
+  return false;
+}
+
+function checkSellCondition(inventory, game) {
   if (!inventory) return null;
 
   const hasMaterial = inventory.items.some(item => {
     const info = item.getComponent('itemInfo');
     return ITEMS[info?.itemType]?.categories?.includes('material');
   });
-  if (hasMaterial) return SellState.category('material');
+  if (hasMaterial && _shopAcceptsCategoryExists(game, 'material')) {
+    return SellState.category('material');
+  }
 
   const foodCount = inventory.items.reduce((sum, item) => {
     const info = item.getComponent('itemInfo');
@@ -68,7 +81,9 @@ function checkSellCondition(inventory) {
     }
     return sum;
   }, 0);
-  if (foodCount >= SELL_FOOD_THRESHOLD) return SellState.category('food');
+  if (foodCount >= SELL_FOOD_THRESHOLD && _shopAcceptsCategoryExists(game, 'food')) {
+    return SellState.category('food');
+  }
 
   return null;
 }
@@ -242,7 +257,7 @@ export class DecisionState {
 
     // 売却判断
     const inventory = entity.getComponent('inventory');
-    const sellState = checkSellCondition(inventory);
+    const sellState = checkSellCondition(inventory, game);
     if (sellState) {
       behavior.changeState(sellState);
       return;
