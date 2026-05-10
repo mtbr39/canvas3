@@ -17,14 +17,14 @@ import { Loot } from '../components/Loot.js';
 import { PulseEffect } from '../components/PulseEffect.js';
 import { FieldBound } from '../components/FieldBound.js';
 
-export function createMonsterBase(x, y, { health, speed, radius, attack, detectionRange, appearance } = {}) {
+export function createMonsterBase(x, y, { health, speed, radius, attack, detectionRange, appearance, regenRate } = {}) {
   const entity = new Entity();
 
   entity
     .addComponent('transform', new Transform(x, y))
     .addComponent('movement', new Movement(speed ?? 120))
     .addComponent('behavior', new Behavior(new IdleState()))
-    .addComponent('health', new Health(health ?? 50))
+    .addComponent('health', new Health(health ?? 500, { regenRate: regenRate ?? 0 }))
     .addComponent('collider', new Collider({ type: 'circle', radius: radius ?? 15 }))
     .addComponent('appearance', appearance ?? new MonsterAppearance())
     .addComponent('tag', new Tag('monster'))
@@ -49,6 +49,7 @@ export function createBoss(x, y) {
     attack: 'boss_claw',
     detectionRange: 250,
     appearance: new MonsterAppearance({ hasWings: true }),
+    regenRate: 5,
   });
 }
 

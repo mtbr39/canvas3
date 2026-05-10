@@ -115,13 +115,13 @@ export class CombatState {
 
     const weaponRange = combat.getWeaponRange();
     const kiteRange = combat.getKiteRange();
+    const kiteStopRange = combat.getKiteStopRange();
 
-    // ヒステリシス: 離脱開始の閾値(kiteRange)と離脱解除の閾値(kiteRange * 1.6)を分け、
-    // 境界付近で「離れる→止まる→近づかれる→離れる」という反復が起きないようにする。
-    // 1.6 はチューニング値: 大きいほど離脱を長く続ける（粘る）、小さいほど早く戦闘距離に戻る。
+    // ヒステリシス: 離脱開始(kiteRange)と離脱解除(kiteStopRange)を分け、
+    // 境界付近で「離れる→止まる→近づかれる→離れる」の反復を防ぐ
     if (kiteRange > 0) {
       if (centerDistance < kiteRange) this.kiting = true;
-      else if (centerDistance > kiteRange * 1.6) this.kiting = false;
+      else if (centerDistance > kiteStopRange) this.kiting = false;
     } else {
       this.kiting = false;
     }

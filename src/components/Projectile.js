@@ -4,6 +4,7 @@ export class Projectile {
     this.dirX = dirX;
     this.dirY = dirY;
     this.speed = speed;
+    this.pierce = false;
   }
 
   update() {

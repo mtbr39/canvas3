@@ -22,8 +22,14 @@ const LOW_HP_THRESHOLD = 0.35;
 // 遠隔武器のkite開始距離 = 武器射程 × この倍率。射程の半分まで近づかれたら離れる
 const KITE_RANGE_RANGED = 0.5;
 
-// 低HP近接の退避距離 = 武器射程 × この倍率。1.2倍 → 武器射程よりやや外まで下がる
-const KITE_RANGE_LOW_HP_MELEE = 1.2;
+// 遠隔武器のkite停止距離 = 武器射程 × この倍率。ここまで離れたらkiteを止める
+const KITE_STOP_RANGED = 0.9;
+
+// 低HP近接の退避距離 [ピクセル相当]。武器射程に依存せず固定
+const KITE_RANGE_LOW_HP_MELEE = 200;
+
+// 低HP近接のkite停止距離 [ピクセル相当]
+const KITE_STOP_LOW_HP_MELEE = 320;
 
 export class Combat {
   constructor(shouldSeekCombat = false, detectionRange, chaseRange) {
@@ -118,15 +124,31 @@ export class Combat {
     const equipment = this.entity.getComponent('equipment');
     if (!equipment) return 0;
     const weapon = equipment.getWeapon();
-    const baseRange = this.getWeaponRange();
 
     if (weapon.attackType === 'ranged') {
-      return baseRange * KITE_RANGE_RANGED;
+      return this.getWeaponRange() * KITE_RANGE_RANGED;
     }
 
     const health = this.entity.getComponent('health');
     if (health && health.maxHealth > 0 && health.currentHealth / health.maxHealth < LOW_HP_THRESHOLD) {
-      return baseRange * KITE_RANGE_LOW_HP_MELEE;
+      return KITE_RANGE_LOW_HP_MELEE;
+    }
+    return 0;
+  }
+
+  // kiteを解除する外側の距離。ヒステリシスで「離れる→止まる→近づかれる→離れる」の反復を防ぐ
+  getKiteStopRange() {
+    const equipment = this.entity.getComponent('equipment');
+    if (!equipment) return 0;
+    const weapon = equipment.getWeapon();
+
+    if (weapon.attackType === 'ranged') {
+      return this.getWeaponRange() * KITE_STOP_RANGED;
+    }
+
+    const health = this.entity.getComponent('health');
+    if (health && health.maxHealth > 0 && health.currentHealth / health.maxHealth < LOW_HP_THRESHOLD) {
+      return KITE_STOP_LOW_HP_MELEE;
     }
     return 0;
   }

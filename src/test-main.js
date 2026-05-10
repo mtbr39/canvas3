@@ -16,8 +16,8 @@ entityInfoPanel.setup();
 
 console.log('test-map: combat');
 
-createHumanParty(game, -150, 0, 3);
-createHumanParty(game, 150, 0, 3);
+createHumanParty(game, -150, 0, 3, { isAdventurer: true });
+createHumanParty(game, 150, 0, 3, { isAdventurer: true });
 
 game.addEntity(createMonster(0, -150));
 game.addEntity(createMonster(0, 150));

@@ -34,13 +34,15 @@ const HUMAN_STATS = {
 const INITIAL_COINS_MIN = 3;
 const INITIAL_COINS_MAX = 10;
 
+const HEALTH_REGEN_RATE = 2;
+
 // x, y を中心に size 人のパーティを生成してgameに追加する
-export function createHumanParty(game, x, y, size) {
+export function createHumanParty(game, x, y, size, options = {}) {
   const members = [];
   for (let i = 0; i < size; i++) {
     const mx = x + (Math.random() - 0.5) * 100;
     const my = y + (Math.random() - 0.5) * 100;
-    const human = createHuman(mx, my);
+    const human = createHuman(mx, my, options);
     game.addEntity(human);
     _giveInitialCoins(game, human);
     members.push(human);
@@ -61,13 +63,13 @@ function _giveInitialCoins(_game, entity) {
   give(coin, inventory);
 }
 
-export function createHuman(x, y) {
+export function createHuman(x, y, { isAdventurer } = {}) {
   const entity = new Entity();
 
-  // 50% adventurer, 50% villager
-  const isAdventurer = Math.random() < 0.5;
+  // 指定がなければ 50% adventurer, 50% villager
+  if (isAdventurer === undefined) isAdventurer = Math.random() < 0.5;
 
-  const health = new Health(100);
+  const health = new Health(100, { regenRate: HEALTH_REGEN_RATE });
   health.removeOnDeath = false;
 
   entity

@@ -30,12 +30,21 @@ export class AttackHitbox {
       }
     );
 
+    let hitOccurred = false;
     for (const target of colliding) {
       const health = target.getComponent('health');
       if (!health || health.isDead) continue;
 
       health.takeDamage(this.damage, this.ownerEntity);
       this.hitEntities.add(target);
+      hitOccurred = true;
+    }
+
+    if (hitOccurred) {
+      const projectile = this.entity.getComponent('projectile');
+      if (projectile && !projectile.pierce) {
+        game.markEntityForRemoval(this.entity);
+      }
     }
   }
 }

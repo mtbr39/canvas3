@@ -1,12 +1,28 @@
 import { DeadState } from '../states/DeadState.js';
 
 export class Health {
-  constructor(maxHealth = 100) {
+  constructor(maxHealth = 100, { regenRate = 0 } = {}) {
     this.entity = null;
     this.maxHealth = maxHealth;
     this.currentHealth = maxHealth;
     this.isDead = false;
     this.removeOnDeath = true;
+    this.regenRate = regenRate;
+    this._regenAccumulator = 0;
+  }
+
+  update() {
+    if (this.isDead || this.regenRate <= 0) return;
+    if (this.currentHealth >= this.maxHealth) {
+      this._regenAccumulator = 0;
+      return;
+    }
+    this._regenAccumulator += this.regenRate * this.entity.game.deltaTime;
+    if (this._regenAccumulator >= 1) {
+      const gain = Math.floor(this._regenAccumulator);
+      this._regenAccumulator -= gain;
+      this.currentHealth = Math.min(this.currentHealth + gain, this.maxHealth);
+    }
   }
 
   takeDamage(amount, attacker = null) {
