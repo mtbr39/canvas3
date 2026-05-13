@@ -30,6 +30,10 @@ export class CombatState {
   }
 
   findTarget(entity) {
+    // 既存ターゲットが生きていれば維持する。
+    // detectionRangeは「索敵範囲」であり、戦闘継続範囲はchaseRange側で判定されるため、
+    // 様子見/kiteで一時的にdetectionRange外に出てもターゲットを失わせない。
+    if (this.target && !this.target.getComponent('health')?.isDead) return;
     const combat = entity.getComponent('combat');
     this.target = combat ? combat.findNearbyEnemy() : null;
   }
@@ -81,13 +85,13 @@ export class CombatState {
     // Target fled too far
     const dist = game.spatialQuery.getDistance(entity, target);
     if (this.isAllyTarget) {
-      if (dist > combat.joinAllyRange) {
-        // joinAllyRangeまで近づき続ける
+      // 自分のchaseRange内に入るまでは距離制限なしで追いかける。
+      // chaseRange内に入ったら isAllyTarget を解除して通常戦闘ロジックへシームレスに移行。
+      if (dist > combat.chaseRange) {
         const targetTransform = target.getComponent('transform');
         movement.moveTo(targetTransform.x, targetTransform.y);
         return;
       }
-      // 十分近づいたら通常の戦闘/逃走ロジックへ
       this.isAllyTarget = false;
     }
     const stopRange = combat.shouldSeekCombat
@@ -110,6 +114,15 @@ export class CombatState {
     if (!combat.shouldSeekCombat) {
       const fleeDestination = this.getFleeDestination(entity, targetTransform);
       movement.moveTo(fleeDestination.x, fleeDestination.y);
+      return;
+    }
+
+    // 様子見: トリガー（条件 → 起動）とアクション（状態 → 移動指示）を分離
+    if (this._shouldStartReposition(entity, combat)) {
+      combat.startReposition();
+    }
+    if (combat.isRepositioning()) {
+      movement.moveTo(combat.reposition.targetX, combat.reposition.targetY);
       return;
     }
 
@@ -155,6 +168,16 @@ export class CombatState {
       // Move closer to get within weapon range
       movement.moveTo(targetTransform.x, targetTransform.y);
     }
+  }
+
+  // 様子見トリガー判定。攻撃クールダウン中の隙間を埋めるように、
+  // 「攻撃できない・割り込み不可な動作中でない」時に確率で発火する。
+  _shouldStartReposition(entity, combat) {
+    if (combat.canAttack()) return false;
+    if (combat.isBusy() || combat.isDodging()) return false;
+    if (combat.isRepositioning()) return false;
+    const REPOSITION_RATE_PER_SEC = 0.5;
+    return Math.random() < REPOSITION_RATE_PER_SEC * entity.game.deltaTime;
   }
 
   getFleeDestination(entity, targetTransform) {

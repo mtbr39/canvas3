@@ -12,7 +12,6 @@ import { ShapeRenderer } from '../components/ShapeRenderer.js';
 import { Collider } from '../components/Collider.js';
 import { Tag } from '../components/Tag.js';
 import { InfoRenderer } from '../components/InfoRenderer.js';
-import { FloatingText } from '../components/FloatingText.js';
 import { createInterruptCheck } from '../states/DecisionState.js';
 import Inventory from '../components/Inventory.js';
 import ItemCollector from '../components/ItemCollector.js';
@@ -83,7 +82,6 @@ export function createHuman(x, y, { isAdventurer } = {}) {
     }))
     .addComponent('tag', new Tag('human'))
     .addComponent('infoRenderer', new InfoRenderer())
-    .addComponent('floatingText', new FloatingText())
     .addComponent('combatIndicator', new CombatIndicator())
     .addComponent('afterImage', new AfterImage())
     .addComponent('inventory', new Inventory())

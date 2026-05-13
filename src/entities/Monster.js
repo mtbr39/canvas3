@@ -12,28 +12,47 @@ import { MonsterAppearance } from '../components/MonsterAppearance.js';
 import { Collider } from '../components/Collider.js';
 import { Tag } from '../components/Tag.js';
 import { InfoRenderer } from '../components/InfoRenderer.js';
-import { FloatingText } from '../components/FloatingText.js';
 import { Loot } from '../components/Loot.js';
 import { PulseEffect } from '../components/PulseEffect.js';
 import { FieldBound } from '../components/FieldBound.js';
 
-export function createMonsterBase(x, y, { health, speed, radius, attack, detectionRange, appearance, regenRate } = {}) {
+const MONSTER_STATS = {
+  normal: {
+    health: 100,
+    speed: 120,
+    radius: 15,
+    attack: 'claw',
+    detectionRange: 150,
+    chaseRange: 12000,
+    regenRate: 0,
+  },
+  boss: {
+    health: 300,
+    speed: 80,
+    radius: 40,
+    attack: 'boss_claw',
+    detectionRange: 250,
+    chaseRange: 12000,
+    regenRate: 5,
+  },
+};
+
+export function createMonsterBase(x, y, stats) {
   const entity = new Entity();
 
   entity
     .addComponent('transform', new Transform(x, y))
-    .addComponent('movement', new Movement(speed ?? 120))
+    .addComponent('movement', new Movement(stats.speed))
     .addComponent('behavior', new Behavior(new IdleState()))
-    .addComponent('health', new Health(health ?? 100, { regenRate: regenRate ?? 0 }))
-    .addComponent('collider', new Collider({ type: 'circle', radius: radius ?? 15 }))
-    .addComponent('appearance', appearance ?? new MonsterAppearance())
+    .addComponent('health', new Health(stats.health, { regenRate: stats.regenRate }))
+    .addComponent('collider', new Collider({ type: 'circle', radius: stats.radius }))
+    .addComponent('appearance', stats.appearance ?? new MonsterAppearance())
     .addComponent('tag', new Tag('monster'))
     .addComponent('infoRenderer', new InfoRenderer())
-    .addComponent('floatingText', new FloatingText())
     .addComponent('combatIndicator', new CombatIndicator())
     .addComponent('afterImage', new AfterImage())
-    .addComponent('equipment', new Equipment(attack ?? 'claw'))
-    .addComponent('combat', Combat.createAggressive(detectionRange ?? 150))
+    .addComponent('equipment', new Equipment(stats.attack))
+    .addComponent('combat', Combat.createAggressive(stats.detectionRange, stats.chaseRange))
     .addComponent('loot', new Loot())
     .addComponent('pulseEffect', new PulseEffect())
     .addComponent('fieldBound', new FieldBound());
@@ -43,18 +62,15 @@ export function createMonsterBase(x, y, { health, speed, radius, attack, detecti
 
 export function createBoss(x, y) {
   return createMonsterBase(x, y, {
-    health: 300,
-    speed: 80,
-    radius: 40,
-    attack: 'boss_claw',
-    detectionRange: 250,
+    ...MONSTER_STATS.boss,
     appearance: new MonsterAppearance({ hasWings: true }),
-    regenRate: 5,
   });
 }
 
 export function createMonster(x, y) {
   const attacks = ['claw', 'bite'];
-  const attack = attacks[Math.floor(Math.random() * attacks.length)];
-  return createMonsterBase(x, y, { attack });
+  return createMonsterBase(x, y, {
+    ...MONSTER_STATS.normal,
+    attack: attacks[Math.floor(Math.random() * attacks.length)],
+  });
 }

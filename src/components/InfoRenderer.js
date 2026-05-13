@@ -37,9 +37,10 @@ export class InfoRenderer {
         : collider.shape.height / 2;
     }
 
-    const lines = [
-      `HP ${health.currentHealth}/${health.maxHealth}`,
-    ];
+    this._renderHealthBar(game, transform, health, offsetY);
+    this._renderCombatAction(game, transform, offsetY);
+
+    const lines = [];
 
     const behavior = this.entity.getComponent('behavior');
     if (behavior?.currentState) {
@@ -93,15 +94,58 @@ lines.push(stateLabel);
     }
 
     const lineHeight = 14;
+    const textStartY = offsetY + 26;
     lines.forEach((line, i) => {
       game.graphics.text(
         transform.x,
-        transform.y + offsetY + 10 + i * lineHeight,
+        transform.y + textStartY + i * lineHeight,
         line,
-        { fill: colors.textColor, fontSize: 12 }
+        { fill: '#000000', fontSize: 12 }
       );
     });
 
+  }
+
+  _getCombatActionLabel() {
+    const behavior = this.entity.getComponent('behavior');
+    if (behavior?.currentState?.constructor.name !== 'CombatState') return null;
+    const combat = this.entity.getComponent('combat');
+    if (!combat) return null;
+
+    if (combat.windup) return combat.windup.weapon.name;
+    if (combat.dodge) return '回避';
+    if (combat.reposition) return '様子見';
+    if (behavior.currentState.kiting) return '距離取り';
+    return null;
+  }
+
+  _renderCombatAction(game, transform, offsetY) {
+    const label = this._getCombatActionLabel();
+    if (!label) return;
+    game.graphics.text(
+      transform.x,
+      transform.y - offsetY - 10,
+      label,
+      { fill: '#000000', fontSize: 12 }
+    );
+  }
+
+  _renderHealthBar(game, transform, health, offsetY) {
+    const barWidth = 40;
+    const barHeight = 5;
+    const y = transform.y + offsetY + 16;
+    const ratio = Math.max(0, Math.min(1, health.currentHealth / health.maxHealth));
+
+    game.graphics.rect(transform.x, y, barWidth, barHeight, {
+      fill: colors.gray06,
+    });
+    if (ratio > 0) {
+      const fillWidth = barWidth * ratio;
+      const fillX = transform.x - barWidth / 2 + fillWidth / 2;
+      game.graphics.rect(fillX, y, fillWidth, barHeight, {
+        fill: colors.green03,
+      });
+    }
   }
 
   _renderQuestTargetLine(game, transform) {

@@ -1,5 +1,4 @@
 import { DecisionState } from './DecisionState.js';
-import { ITEMS } from '../data/Items.js';
 
 export class CollectItemState {
   constructor() {
@@ -37,14 +36,6 @@ export class CollectItemState {
     }
 
     if (itemCollector.tryPickup(this.targetItem)) {
-      const floatingText = entity.getComponent('floatingText');
-      if (floatingText) {
-        const itemData = ITEMS[itemInfo.itemType];
-        if (itemData) {
-          floatingText.show(itemData.name);
-        }
-      }
-
       const behavior = entity.getComponent('behavior');
       behavior.changeState(new DecisionState());
       return;

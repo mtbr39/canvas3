@@ -46,19 +46,46 @@ export class Combat {
     this.shouldSeekCombat = shouldSeekCombat;
     this.cooldownTimer = 0;
     this.fleeSpeedMultiplier = FLEE_SPEED_MULTIPLIER;
-    this.fleeStopMultiplier = 3.0;
+    this.fleeStopMultiplier = 1.5;
     this.detectionRange = detectionRange;
     this.chaseRange = chaseRange ?? detectionRange * 1.5;
-    this.joinAllyRange = this.chaseRange * 1.5;
     this.windup = null;
     this.reactionTime = REACTION_TIME;
     this.dodgeCooldown = 0;
     this.perceiving = null;
     this.dodge = null;
+    this.reposition = null;
   }
 
   isDodging() {
     return this.dodge !== null;
+  }
+
+  isRepositioning() {
+    return this.reposition !== null;
+  }
+
+  // 様子見: 現在地から半径 radius 内のランダムな点に移動。
+  // 攻撃クールダウン中などに揺さぶりとして発火させる想定。
+  // 起動可否のうち「Combat自身しか知らない条件」だけここで守る。状況判断（確率など）は呼び出し側。
+  startReposition(radius = 120, duration = 1.5) {
+    if (this.reposition || this.isBusy() || this.isDodging()) return false;
+    const transform = this.entity.getComponent('transform');
+    if (!transform) return false;
+
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 40 + Math.random() * (radius - 40);
+    this.reposition = {
+      targetX: transform.x + Math.cos(angle) * dist,
+      targetY: transform.y + Math.sin(angle) * dist,
+      timer: duration,
+    };
+    return true;
+  }
+
+  _updateReposition(dt) {
+    this.reposition.timer -= dt;
+    if (this.reposition.timer <= 0) this.reposition = null;
   }
 
   // 攻撃の予備動作中は割り込み不可。
@@ -89,7 +116,6 @@ export class Combat {
 
     this.entity.getComponent('movement')?.stop();
     this.entity.getComponent('afterImage')?.trigger(DODGE_DURATION);
-    this.entity.getComponent('floatingText')?.show('回避');
     return true;
   }
 
@@ -237,11 +263,6 @@ export class Combat {
     };
     this.cooldownTimer = windupDuration + weapon.cooldown;
 
-    const floatingText = this.entity.getComponent('floatingText');
-    if (floatingText) {
-      floatingText.show(weapon.name);
-    }
-
     return true;
   }
 
@@ -352,6 +373,10 @@ export class Combat {
 
     if (this.dodge) {
       this._updateDodge(dt);
+    }
+
+    if (this.reposition) {
+      this._updateReposition(dt);
     }
 
     // 脅威の知覚: 検出してから reactionTime 経つと回避発動
