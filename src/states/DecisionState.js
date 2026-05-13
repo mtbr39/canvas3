@@ -100,8 +100,12 @@ function _combatCheck(entity, currentState) {
 
   const combat = entity.getComponent('combat');
   if (combat) {
-    const enemy = combat.findNearbyEnemy();
-    if (enemy) return new CombatState(currentState);
+    const target = combat.findCombatTrigger();
+    if (target) {
+      const state = new CombatState(currentState);
+      state.target = target;
+      return state;
+    }
   }
   return null;
 }
@@ -212,10 +216,15 @@ export class DecisionState {
       }
     }
 
-    // Check if this entity seeks combat
-    if (combat && combat.shouldSeekCombat && combat.findNearbyEnemy()) {
-      behavior.changeState(new CombatState());
-      return;
+    // Combat移行の判断は findCombatTrigger に集約（報復 or 索敵）
+    if (combat) {
+      const target = combat.findCombatTrigger();
+      if (target) {
+        const state = new CombatState();
+        state.target = target;
+        behavior.changeState(state);
+        return;
+      }
     }
 
     // 冒険者で依頼未受注 → 近くのギルドへ向かう

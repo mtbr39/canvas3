@@ -173,6 +173,15 @@ export class Combat {
     return this.cooldownTimer <= 0 && !this.windup;
   }
 
+  // Combatに入るべきならターゲットを返す。理由（報復 or 索敵）はここに集約する。
+  // 被攻撃時は shouldSeekCombat に関わらず反撃する。
+  findCombatTrigger() {
+    const attacker = this.entity.getComponent('health')?.lastAttacker;
+    if (attacker && !attacker.getComponent('health')?.isDead) return attacker;
+    if (this.shouldSeekCombat) return this.findNearbyEnemy();
+    return null;
+  }
+
   findNearbyEnemy() {
     const transform = this.entity.getComponent('transform');
     if (!transform) return null;

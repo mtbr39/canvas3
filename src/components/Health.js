@@ -9,15 +9,23 @@ export class Health {
     this.removeOnDeath = true;
     this.regenRate = regenRate;
     this._regenAccumulator = 0;
+    this.lastAttacker = null;
   }
 
   update() {
+    const dt = this.entity.game.deltaTime;
+
+    // 攻撃者が死んだら忘れる。戦闘の継続/離脱判定はCombatStateの距離で行うのでタイマーは持たない。
+    if (this.lastAttacker && this.lastAttacker.getComponent('health')?.isDead) {
+      this.lastAttacker = null;
+    }
+
     if (this.isDead || this.regenRate <= 0) return;
     if (this.currentHealth >= this.maxHealth) {
       this._regenAccumulator = 0;
       return;
     }
-    this._regenAccumulator += this.regenRate * this.entity.game.deltaTime;
+    this._regenAccumulator += this.regenRate * dt;
     if (this._regenAccumulator >= 1) {
       const gain = Math.floor(this._regenAccumulator);
       this._regenAccumulator -= gain;
@@ -28,6 +36,9 @@ export class Health {
   takeDamage(amount, attacker = null) {
     if (this.isDead) return;
     this.currentHealth -= amount;
+    if (attacker && attacker !== this.entity) {
+      this.lastAttacker = attacker;
+    }
 
     if (this.entity && !this.isDead) {
       const renderer = this.entity.getComponent('shapeRenderer') || this.entity.getComponent('appearance');

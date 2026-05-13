@@ -217,6 +217,9 @@ export class CombatState {
         this.originalSpeed = undefined;
       }
     }
+    // Combatを抜けたら報復対象を忘れる。再度殴られれば takeDamage で再記録される。
+    const health = entity.getComponent('health');
+    if (health) health.lastAttacker = null;
     this.target = null;
   }
 }
