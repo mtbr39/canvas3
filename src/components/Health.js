@@ -30,9 +30,9 @@ export class Health {
     this.currentHealth -= amount;
 
     if (this.entity && !this.isDead) {
-      const shapeRenderer = this.entity.getComponent('shapeRenderer');
-      if (shapeRenderer) {
-        shapeRenderer.flash();
+      const renderer = this.entity.getComponent('shapeRenderer') || this.entity.getComponent('appearance');
+      if (renderer && renderer.flash) {
+        renderer.flash();
       }
     }
 
