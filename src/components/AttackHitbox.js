@@ -1,11 +1,12 @@
 export class AttackHitbox {
-  constructor(damage, ownerEntity, duration = 0.2) {
+  constructor(damage, ownerEntity, duration = 0.2, hitFilter = null) {
     this.entity = null;
     this.damage = damage;
     this.ownerEntity = ownerEntity;
     this.duration = duration;
     this.timer = duration;
     this.hitEntities = new Set();
+    this.hitFilter = hitFilter;
   }
 
   update() {
@@ -26,7 +27,10 @@ export class AttackHitbox {
     const colliding = game.spatialQuery.findCollidingEntities(
       this.entity,
       (target) => {
-        return target !== this.ownerEntity && !this.hitEntities.has(target);
+        if (target === this.ownerEntity) return false;
+        if (this.hitEntities.has(target)) return false;
+        if (this.hitFilter && !this.hitFilter(target)) return false;
+        return true;
       }
     );
 

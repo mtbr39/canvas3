@@ -463,6 +463,14 @@ export class Combat {
     }
   }
 
+  // 敵対関係にある相手のみダメージを通す。発射時点の関係性で固定するのではなく、
+  // 着弾時に最新の関係性を参照する（飛翔中に敵対化/和解した場合に追従）。
+  _buildHostileHitFilter() {
+    const relationship = this.entity.getComponent('relationship');
+    if (!relationship) return null;
+    return (target) => relationship.isHostile(target);
+  }
+
   performMeleeAttack(transform, dirX, dirY, weapon) {
     const dist = this.getMeleeHitboxDistance(weapon);
     const hitboxX = transform.x + dirX * dist;
@@ -475,7 +483,9 @@ export class Combat {
       weapon.hitbox.radius,
       weapon.damage,
       this.entity,
-      weapon.hitbox.duration
+      weapon.hitbox.duration,
+      null,
+      this._buildHostileHitFilter()
     );
     game.addEntity(hitbox);
   }
@@ -497,7 +507,8 @@ export class Combat {
         dirX: dirX,
         dirY: dirY,
         speed: weapon.projectile.speed
-      }
+      },
+      this._buildHostileHitFilter()
     );
     game.addEntity(hitbox);
   }

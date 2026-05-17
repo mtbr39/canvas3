@@ -7,14 +7,14 @@ import { Projectile } from '../components/Projectile.js';
 import { ShapeRenderer } from '../components/ShapeRenderer.js';
 import { colors } from '../data/Colors.js';
 
-export function createAttackHitbox(x, y, radius, damage, ownerEntity, duration = 0.2, projectile = null) {
+export function createAttackHitbox(x, y, radius, damage, ownerEntity, duration = 0.2, projectile = null, hitFilter = null) {
   const entity = new Entity();
 
   entity
     .addComponent('transform', new Transform(x, y))
     .addComponent('collider', new Collider({ type: 'circle', radius }))
     .addComponent('tag', new Tag('attack'))
-    .addComponent('attackHitbox', new AttackHitbox(damage, ownerEntity, duration))
+    .addComponent('attackHitbox', new AttackHitbox(damage, ownerEntity, duration, hitFilter))
     .addComponent('shapeRenderer', new ShapeRenderer({ fill: colors.gray04, shadow: false }));
 
   if (projectile) {
