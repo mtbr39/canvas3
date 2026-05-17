@@ -200,12 +200,21 @@ export class Combat {
   }
 
   // Combatに入るべきならターゲットを返す。理由（報復 or 索敵）はここに集約する。
-  // 被攻撃時は shouldSeekCombat に関わらず反撃する。
+  // 被攻撃時は shouldSeekCombat に関わらず反撃するが、相手が敵対関係にある場合に限る。
+  // 「攻撃された」=「敵」ではない判断は Relationship に委ねている。
   findCombatTrigger() {
     const attacker = this.entity.getComponent('health')?.lastAttacker;
-    if (attacker && !attacker.getComponent('health')?.isDead) return attacker;
+    if (attacker && !attacker.getComponent('health')?.isDead && this._isHostile(attacker)) {
+      return attacker;
+    }
     if (this.shouldSeekCombat) return this.findNearbyEnemy();
     return null;
+  }
+
+  _isHostile(other) {
+    const relationship = this.entity.getComponent('relationship');
+    if (!relationship) return false;
+    return relationship.isHostile(other);
   }
 
   findNearbyEnemy() {
@@ -213,21 +222,17 @@ export class Combat {
     if (!transform) return null;
 
     const game = this.entity.game;
-    const tag = this.entity.getComponent('tag');
-    const enemyTag = tag?.hasTag('human') ? 'monster' : 'human';
-
-    const nearbyEnemies = game.spatialQuery.findNearbyByTag(
-      game.entities, transform.x, transform.y, this.detectionRange, enemyTag
+    const results = game.spatialQuery.findNearbyEntities(
+      game.entities, transform.x, transform.y, this.detectionRange,
+      (e) => {
+        if (e === this.entity) return false;
+        const health = e.getComponent('health');
+        if (!health || health.isDead) return false;
+        return this._isHostile(e);
+      }
     );
 
-    for (const result of nearbyEnemies) {
-      const health = result.entity.getComponent('health');
-      if (health && !health.isDead) {
-        return result.entity;
-      }
-    }
-
-    return null;
+    return results.length > 0 ? results[0].entity : null;
   }
 
   attack(targetEntity) {
@@ -324,11 +329,9 @@ export class Combat {
     if (!transform) return null;
 
     const game = this.entity.game;
-    const tag = this.entity.getComponent('tag');
-    const enemyTag = tag?.hasTag('human') ? 'monster' : 'human';
-
-    const nearby = game.spatialQuery.findNearbyByTag(
-      game.entities, transform.x, transform.y, this.detectionRange, enemyTag
+    const nearby = game.spatialQuery.findNearbyEntities(
+      game.entities, transform.x, transform.y, this.detectionRange,
+      (e) => e !== this.entity && this._isHostile(e)
     );
 
     for (const result of nearby) {

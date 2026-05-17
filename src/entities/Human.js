@@ -11,6 +11,7 @@ import { IdleState } from '../states/IdleState.js';
 import { ShapeRenderer } from '../components/ShapeRenderer.js';
 import { Collider } from '../components/Collider.js';
 import { Tag } from '../components/Tag.js';
+import { Relationship } from '../components/Relationship.js';
 import { InfoRenderer } from '../components/InfoRenderer.js';
 import { createInterruptCheck } from '../states/DecisionState.js';
 import Inventory from '../components/Inventory.js';
@@ -81,6 +82,7 @@ export function createHuman(x, y, { isAdventurer } = {}) {
       fill: colors.base01,
     }))
     .addComponent('tag', new Tag('human'))
+    .addComponent('relationship', new Relationship())
     .addComponent('infoRenderer', new InfoRenderer())
     .addComponent('combatIndicator', new CombatIndicator())
     .addComponent('afterImage', new AfterImage())

@@ -11,6 +11,7 @@ import { IdleState } from '../states/IdleState.js';
 import { MonsterAppearance } from '../components/MonsterAppearance.js';
 import { Collider } from '../components/Collider.js';
 import { Tag } from '../components/Tag.js';
+import { Relationship } from '../components/Relationship.js';
 import { InfoRenderer } from '../components/InfoRenderer.js';
 import { Loot } from '../components/Loot.js';
 import { PulseEffect } from '../components/PulseEffect.js';
@@ -23,7 +24,7 @@ const MONSTER_STATS = {
     radius: 15,
     attack: 'claw',
     detectionRange: 150,
-    chaseRange: 12000,
+    chaseRange: 1200,
     regenRate: 0,
   },
   boss: {
@@ -32,7 +33,7 @@ const MONSTER_STATS = {
     radius: 40,
     attack: 'boss_claw',
     detectionRange: 250,
-    chaseRange: 12000,
+    chaseRange: 1200,
     regenRate: 5,
   },
 };
@@ -48,6 +49,7 @@ export function createMonsterBase(x, y, stats) {
     .addComponent('collider', new Collider({ type: 'circle', radius: stats.radius }))
     .addComponent('appearance', stats.appearance ?? new MonsterAppearance())
     .addComponent('tag', new Tag('monster'))
+    .addComponent('relationship', new Relationship())
     .addComponent('infoRenderer', new InfoRenderer())
     .addComponent('combatIndicator', new CombatIndicator())
     .addComponent('afterImage', new AfterImage())
