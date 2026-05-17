@@ -1,3 +1,5 @@
+import { RANGE_TIERS } from '../data/Items.js';
+
 export class CombatIndicator {
   constructor() {
     this.entity = null;
@@ -28,7 +30,7 @@ export class CombatIndicator {
         fill: 'rgba(220, 60, 60, 0.25)',
       });
     } else if (w.weapon.attackType === 'ranged') {
-      const range = w.weapon.projectile.speed * w.weapon.projectile.duration * 0.6;
+      const range = RANGE_TIERS[w.weapon.projectile.range] * 1.0;
       const endX = transform.x + w.dirX * range;
       const endY = transform.y + w.dirY * range;
       game.graphics.line(transform.x, transform.y, endX, endY, {

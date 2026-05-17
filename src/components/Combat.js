@@ -1,4 +1,5 @@
 import { createAttackHitbox } from '../entities/AttackHitbox.js';
+import { RANGE_TIERS } from '../data/Items.js';
 
 // ============================================================
 // 定数: 戦闘の「身体性能」に関するもの。
@@ -37,8 +38,8 @@ const LOW_HP_THRESHOLD = 0.35;
 // --- 距離どり（kite）レンジ ---
 // 遠隔武器のkite開始距離 = 武器射程 × この倍率。射程の半分まで近づかれたら離れる
 const KITE_RANGE_RANGED = 0.5;
-// 遠隔武器のkite停止距離 = 武器射程 × この倍率。ここまで離れたらkiteを止める
-const KITE_STOP_RANGED = 0.9;
+// 遠隔武器のkite停止距離 = 武器射程 × この倍率。ここまで離れたらkiteを止める（距離どりの目標）
+const KITE_STOP_RANGED = 0.8;
 // 低HP近接の退避距離 [ピクセル相当]。武器射程に依存せず固定
 const KITE_RANGE_LOW_HP_MELEE = 200;
 // 低HP近接のkite停止距離 [ピクセル相当]
@@ -165,7 +166,7 @@ export class Combat {
     if (weapon.attackType === 'melee') {
       return this.getMeleeHitboxDistance(weapon) + weapon.hitbox.radius;
     } else {
-      return weapon.projectile.speed * weapon.projectile.duration;
+      return RANGE_TIERS[weapon.projectile.range];
     }
   }
 
@@ -502,7 +503,7 @@ export class Combat {
       weapon.projectile.radius,
       weapon.damage,
       this.entity,
-      weapon.projectile.duration,
+      RANGE_TIERS[weapon.projectile.range] / weapon.projectile.speed,
       {
         dirX: dirX,
         dirY: dirY,

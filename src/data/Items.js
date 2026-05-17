@@ -1,5 +1,13 @@
 import { colors } from './Colors.js';
 
+export const RANGE_TIERS = {
+  'short': 200,
+  'mid-short': 300,
+  'mid': 400,
+  'mid-long': 600,
+  'long': 800
+};
+
 export const ITEMS = {
   // === 人間用武器 ===
   sword: {
@@ -46,7 +54,7 @@ export const ITEMS = {
     projectile: {
       radius: 8,
       speed: 400,
-      duration: 2.0
+      range: 'mid-short'
     },
     dropVisual: {
       shape: 'rect',
@@ -64,7 +72,7 @@ export const ITEMS = {
     projectile: {
       radius: 12,
       speed: 300,
-      duration: 3.0
+      range: 'mid'
     },
     dropVisual: {
       shape: 'rect',
