@@ -40,6 +40,13 @@ const KITE_RANGE_LOW_HP_MELEE = 200;
 // 低HP近接のkite停止距離 [ピクセル相当]
 const KITE_STOP_LOW_HP_MELEE = 320;
 
+// 休憩(rest)の最大時間 [秒]
+const REST_DURATION = 5.0;
+// 休憩中のHP再生倍率（通常regenRateにこれを掛ける）
+const REST_REGEN_MULTIPLIER = 3.0;
+// 休憩中の最低保証 regen [HP/秒]。素のregenRateが0でも休憩中は回復させる
+const MIN_REST_REGEN = 5.0;
+
 export class Combat {
   constructor(shouldSeekCombat = false, detectionRange, chaseRange) {
     this.entity = null;
@@ -55,6 +62,7 @@ export class Combat {
     this.perceiving = null;
     this.dodge = null;
     this.reposition = null;
+    this.rest = null;
   }
 
   isDodging() {
@@ -63,6 +71,54 @@ export class Combat {
 
   isRepositioning() {
     return this.reposition !== null;
+  }
+
+  isResting() {
+    return this.rest !== null;
+  }
+
+  // 休憩: その場に留まり、HP再生速度を一時的にブーストする。
+  // 低HPで距離どり(kite)が終わったあとの「腹をくくる前の小休止」として呼ばれる想定。
+  // 起動可否のうち「Combat自身しか知らない条件」だけここで守る。状況判断は呼び出し側。
+  startRest() {
+    if (this.rest || this.isBusy() || this.isDodging() || this.isRepositioning()) return false;
+    const health = this.entity.getComponent('health');
+    if (!health) return false;
+
+    this.rest = {
+      timer: 0,
+      duration: REST_DURATION,
+      originalRegenRate: health.regenRate,
+      healthCheckpoint: health.currentHealth,
+    };
+    health.regenRate = Math.max(health.regenRate * REST_REGEN_MULTIPLIER, MIN_REST_REGEN);
+    this.entity.getComponent('movement')?.stop();
+    return true;
+  }
+
+  _endRest() {
+    if (!this.rest) return;
+    const health = this.entity.getComponent('health');
+    if (health) health.regenRate = this.rest.originalRegenRate;
+    this.rest = null;
+  }
+
+  _updateRest(dt) {
+    const r = this.rest;
+    r.timer += dt;
+    const health = this.entity.getComponent('health');
+
+    // 被弾検知: チェックポイントよりHPが減っていたら攻撃された → 休憩中断
+    if (health && health.currentHealth < r.healthCheckpoint) {
+      this._endRest();
+      return;
+    }
+    if (health) r.healthCheckpoint = health.currentHealth;
+
+    // 規定時間経過 or HP全快で終了
+    if (r.timer >= r.duration || (health && health.currentHealth >= health.maxHealth)) {
+      this._endRest();
+    }
   }
 
   // 様子見: 現在地から半径 radius 内のランダムな点に移動。
@@ -92,6 +148,13 @@ export class Combat {
   // 新しい「割り込み不可な動作」を作るときは、ここに条件を足していく。
   isBusy() {
     return this.windup !== null;
+  }
+
+  // HPが低危険域に入っているか。kite起動条件と休憩遷移の両方で参照する。
+  isLowHp() {
+    const health = this.entity.getComponent('health');
+    if (!health || health.maxHealth <= 0) return false;
+    return health.currentHealth / health.maxHealth < LOW_HP_THRESHOLD;
   }
 
   // dirX, dirY は呼び出し側（CombatState）が決定した回避方向の単位ベクトル。
@@ -380,6 +443,10 @@ export class Combat {
 
     if (this.reposition) {
       this._updateReposition(dt);
+    }
+
+    if (this.rest) {
+      this._updateRest(dt);
     }
 
     // 脅威の知覚: 検出してから reactionTime 経つと回避発動

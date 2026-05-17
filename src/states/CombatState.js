@@ -1,5 +1,14 @@
 import { DecisionState } from './DecisionState.js';
 
+// 低HP kiteは最大 MAX_KITE_DURATION 秒で強制終了する。
+// 「低HPなら永久に逃げ続ける」挙動を防ぐための上限。kite終了後はCombat側のrestに引き継がれる。
+const MAX_KITE_DURATION = 3.0;
+
+// kite終了後、再kite可能になるまでの時間 [秒]。
+// REST_DURATION(5秒)より長く設定し、「休憩→即kite」にならないようにする。
+// 休憩中もこのタイマーは進むので、休憩明けに少しだけ戦って次のkiteが解禁される運用。
+const KITE_COOLDOWN = 12.0;
+
 export class CombatState {
   constructor(returnState = null) {
     this.returnState = returnState;
@@ -11,6 +20,9 @@ export class CombatState {
   enter(entity) {
     this.checkTimer = 0;
     this.kiting = false;
+    this.kiteTimer = 0;
+    this.kiteIsLowHp = false;
+    this.kiteCooldown = 0;
     if (!this.target) this.findTarget(entity);
     entity.getComponent('party')?.clearDestination();
     const movement = entity.getComponent('movement');
@@ -49,6 +61,12 @@ export class CombatState {
 
     // 回避中は他の行動を抑止
     if (combat.isDodging()) return;
+
+    // 休憩中はその場に留まる。Combat側がHP再生と中断条件を管理する。
+    if (combat.isResting()) {
+      movement.stop();
+      return;
+    }
 
     // 回避判定: 反応時間が満ちて回避クールダウンも明けていれば回避を起動
     const dodgeFrom = combat.consumeDodgePlan();
@@ -130,13 +148,38 @@ export class CombatState {
     const kiteRange = combat.getKiteRange();
     const kiteStopRange = combat.getKiteStopRange();
 
-    // ヒステリシス: 離脱開始(kiteRange)と離脱解除(kiteStopRange)を分け、
-    // 境界付近で「離れる→止まる→近づかれる→離れる」の反復を防ぐ
-    if (kiteRange > 0) {
-      if (centerDistance < kiteRange) this.kiting = true;
-      else if (centerDistance > kiteStopRange) this.kiting = false;
+    // kiteクールダウンは休憩中も進める。「休憩→即kite」を防ぐため。
+    if (this.kiteCooldown > 0) this.kiteCooldown -= game.deltaTime;
+
+    const wasKiting = this.kiting;
+    if (kiteRange > 0 && this.kiteCooldown <= 0) {
+      // ヒステリシス: 離脱開始(kiteRange)と離脱解除(kiteStopRange)を分け、
+      // 境界付近で「離れる→止まる→近づかれる→離れる」の反復を防ぐ
+      if (centerDistance < kiteRange) {
+        if (!this.kiting) this.kiteIsLowHp = combat.isLowHp();
+        this.kiting = true;
+      } else if (centerDistance > kiteStopRange) {
+        this.kiting = false;
+      }
     } else {
       this.kiting = false;
+    }
+
+    if (this.kiting) {
+      this.kiteTimer += game.deltaTime;
+      // 低HP kiteは継続時間の上限で強制終了。ここで止めないと永久に逃げ続けてしまう。
+      if (this.kiteIsLowHp && this.kiteTimer >= MAX_KITE_DURATION) this.kiting = false;
+    }
+
+    // 低HPで逃げ終わったら、その場で休憩してHPを取り戻す。
+    // kite終了と同時にクールダウン発動 → 休憩中もタイマーが進み、明けてから少し戦って次のkiteが解禁される。
+    if (wasKiting && !this.kiting) {
+      this.kiteTimer = 0;
+      this.kiteCooldown = KITE_COOLDOWN;
+      if (this.kiteIsLowHp) {
+        combat.startRest();
+        return;
+      }
     }
 
     // 近すぎる場合は離れながら攻撃する

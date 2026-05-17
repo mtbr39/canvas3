@@ -13,7 +13,7 @@ export function getStateLabel(state) {
     case 'EatState':         return '食事中';
     case 'BuyState':         return '買い物中';
     case 'SellState':        return '売り物中';
-    case 'DeadState':        return '死亡';
+    case 'DeadState':        return '気絶中';
     default:                 return name;
   }
 }
