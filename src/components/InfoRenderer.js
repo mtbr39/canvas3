@@ -38,7 +38,6 @@ export class InfoRenderer {
     }
 
     this._renderHealthBar(game, transform, health, offsetY);
-    this._renderCombatAction(game, transform, offsetY);
 
     const lines = [];
 
@@ -104,30 +103,6 @@ lines.push(stateLabel);
       );
     });
 
-  }
-
-  _getCombatActionLabel() {
-    const behavior = this.entity.getComponent('behavior');
-    if (behavior?.currentState?.constructor.name !== 'CombatState') return null;
-    const combat = this.entity.getComponent('combat');
-    if (!combat) return null;
-
-    if (combat.windup) return combat.windup.weapon.name;
-    if (combat.dodge) return '回避';
-    if (combat.reposition) return '様子見';
-    if (behavior.currentState.kiting) return '距離取り';
-    return null;
-  }
-
-  _renderCombatAction(game, transform, offsetY) {
-    const label = this._getCombatActionLabel();
-    if (!label) return;
-    game.graphics.text(
-      transform.x,
-      transform.y - offsetY - 10,
-      label,
-      { fill: '#000000', fontSize: 12 }
-    );
   }
 
   _renderHealthBar(game, transform, health, offsetY) {

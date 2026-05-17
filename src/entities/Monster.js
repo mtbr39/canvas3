@@ -6,6 +6,7 @@ import { Health } from '../components/Health.js';
 import { Combat } from '../components/Combat.js';
 import { CombatIndicator } from '../components/CombatIndicator.js';
 import { AfterImage } from '../components/AfterImage.js';
+import { ActionLog } from '../components/ActionLog.js';
 import { Equipment } from '../components/Equipment.js';
 import { IdleState } from '../states/IdleState.js';
 import { MonsterAppearance } from '../components/MonsterAppearance.js';
@@ -53,6 +54,7 @@ export function createMonsterBase(x, y, stats) {
     .addComponent('infoRenderer', new InfoRenderer())
     .addComponent('combatIndicator', new CombatIndicator())
     .addComponent('afterImage', new AfterImage())
+    .addComponent('actionLog', new ActionLog())
     .addComponent('equipment', new Equipment(stats.attack))
     .addComponent('combat', Combat.createAggressive(stats.detectionRange, stats.chaseRange))
     .addComponent('loot', new Loot())

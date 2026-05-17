@@ -1,5 +1,11 @@
 import { DecisionState } from './DecisionState.js';
 
+// ============================================================
+// 定数: 戦闘の「オーケストレーション」に関するもの。
+//   - 「どの条件が揃ったら、どの行動を起こすか」のしきい値・タイミング
+// 個々のアクションの素の長さ・距離（DODGE_DURATION 等）は Combat 側に置く。
+// ============================================================
+
 // 低HP kiteは最大 MAX_KITE_DURATION 秒で強制終了する。
 // 「低HPなら永久に逃げ続ける」挙動を防ぐための上限。kite終了後はCombat側のrestに引き継がれる。
 const MAX_KITE_DURATION = 3.0;
@@ -9,6 +15,30 @@ const MAX_KITE_DURATION = 3.0;
 // 休憩中もこのタイマーは進むので、休憩明けに少しだけ戦って次のkiteが解禁される運用。
 const KITE_COOLDOWN = 12.0;
 
+// 様子見の発火確率 [回/秒]。攻撃クールダウン中の隙間を埋めるための揺さぶり。
+const REPOSITION_RATE_PER_SEC = 0.5;
+
+// kite中、毎フレーム指示する「敵から離れる方向の到達先距離」 [ピクセル相当]。
+// 毎フレーム上書きするので、実効的には方向ベクトルの大きさ。
+const KITE_MOVE_DISTANCE = 150;
+
+// 防御的エンティティが逃げる際、目標地点までの距離 [ピクセル相当]
+const FLEE_DISTANCE = 200;
+
+// 仲間がこの距離以上離れていれば「仲間のほうへ逃げる」を優先する
+const ALLY_PROXIMITY_THRESHOLD = 1000;
+
+// ============================================================
+// CombatState
+// 役割: 戦闘中のオーケストレーション。Combat が公開する
+//   「条件メソッド (isXxx / shouldXxx / canXxx)」と
+//   「アクションメソッド (startXxx / attack)」を組み合わせて、
+// その瞬間に何をすべきかを決める。
+//
+// update() は基本的に [条件 → 行動] のリストとして読める形を保つ。
+// 「自分しか持っていない状態（kite中か、kiteクールダウン）」だけ
+// このクラスが持ち、その他の戦闘状態は Combat に問い合わせる。
+// ============================================================
 export class CombatState {
   constructor(returnState = null) {
     this.returnState = returnState;
@@ -34,6 +64,142 @@ export class CombatState {
     movement?.stop();
   }
 
+  exit(entity) {
+    const movement = entity.getComponent('movement');
+    if (movement) {
+      movement.stop();
+      if (this.originalSpeed !== undefined) {
+        movement.speed = this.originalSpeed;
+        this.originalSpeed = undefined;
+      }
+    }
+    // Combatを抜けたら報復対象を忘れる。再度殴られれば takeDamage で再記録される。
+    const health = entity.getComponent('health');
+    if (health) health.lastAttacker = null;
+    this.target = null;
+  }
+
+  // ----------------------------------------------------------
+  // メインループ
+  //   上から順に「条件が満たされたら対応する行動をしてreturn」。
+  //   各ブロックの先頭コメントが「どの状況/関心事か」を示し、
+  //   実装は条件メソッド + アクション呼び出しで構成される。
+  // ----------------------------------------------------------
+  update(entity) {
+    this._runUpdate(entity);
+
+    // 毎フレーム「いま何をしているか」をログに push。
+    // 同じラベルなら timer がリフレッシュされるだけ（積み増しはしない）。
+    // → 状態が継続している間は表示が消えず、切り替わった瞬間に上に積まれる。
+    const combat = entity.getComponent('combat');
+    if (combat) {
+      const label = this._currentActionLabel(entity, combat);
+      if (label) entity.getComponent('actionLog')?.push(label);
+    }
+  }
+
+  _runUpdate(entity) {
+    const ctx = this._gather(entity);
+    if (!ctx) return;
+    const { combat, movement } = ctx;
+
+    // --- 割り込み不可: 現在の動作を最後までやらせる ---
+    if (combat.isDodging()) return;
+    if (combat.isResting()) { movement.stop(); return; }
+
+    // --- 反射的回避: 自分への攻撃のwindupを察知したら横にステップ ---
+    if (this._tryDodge(ctx)) return;
+
+    // --- ターゲット更新 & 戦闘終了判定 ---
+    this._tickRetarget(ctx);
+    const target = this.getTarget();
+    if (!target) return this._exitToDecision(ctx);
+
+    const targetTransform = target.getComponent('transform');
+    if (!targetTransform) return this._exitToDecision(ctx);
+
+    if (this._shouldChaseAlly(ctx, target)) {
+      movement.moveTo(targetTransform.x, targetTransform.y);
+      return;
+    }
+    if (this._isTargetOutOfRange(ctx, target)) return this._exitToDecision(ctx);
+
+    // --- 防御的エンティティ: 戦わずに逃げる ---
+    if (!combat.shouldSeekCombat) {
+      const flee = this.getFleeDestination(entity, targetTransform);
+      movement.moveTo(flee.x, flee.y);
+      return;
+    }
+
+    // --- 様子見: 攻撃クールダウン中の隙間を揺さぶりで埋める ---
+    if (this._shouldStartReposition(combat)) combat.startReposition();
+    if (combat.isRepositioning()) {
+      movement.moveTo(combat.reposition.targetX, combat.reposition.targetY);
+      return;
+    }
+
+    // --- 距離どり(kite)の状態更新 ---
+    const centerDistance = entity.game.spatialQuery.getDistance(entity, target);
+    this._tickKite(ctx, centerDistance);
+
+    // --- kite明けで低HPだったなら休憩へ ---
+    if (this._kiteJustEndedAtLowHp()) {
+      combat.startRest();
+      this._consumeKiteEnd();
+      return;
+    }
+    if (this._kiteJustEnded()) this._consumeKiteEnd();
+
+    // --- kite中: 後退しつつ射程に入れば撃つ ---
+    if (this.kiting) {
+      this._kiteAndAttack(ctx, target, centerDistance);
+      return;
+    }
+
+    // --- 通常: 射程内なら攻撃、外なら接近 ---
+    this._engageOrApproach(ctx, target, centerDistance);
+  }
+
+  // フレーム末の「現在の行動」ラベル。状態フラグを優先度順に見て決める。
+  // - 起動中の動作（休憩/回避/攻撃windup/様子見）が最優先
+  // - 次に距離どり(kiting)
+  // - 移動中なら「逃走」or「接近」
+  // - それ以外は射程内で構えている／クールダウン待ち
+  _currentActionLabel(entity, combat) {
+    if (combat.isResting()) return '休憩';
+    if (combat.isDodging()) return '回避';
+    if (combat.windup) return combat.windup.weapon.name;
+    if (combat.isRepositioning()) return '様子見';
+    if (this.kiting) return '距離取り';
+
+    const target = this.getTarget();
+    if (!target) return null;
+
+    if (!combat.shouldSeekCombat) return '逃走';
+
+    const dist = entity.game.spatialQuery.getDistance(entity, target);
+    if (dist > combat.getWeaponRange()) return '接近';
+    if (!combat.canAttack()) return '待機';
+    return '構え';
+  }
+
+  // ----------------------------------------------------------
+  // セットアップ / ヘルパ
+  // ----------------------------------------------------------
+
+  _gather(entity) {
+    const combat = entity.getComponent('combat');
+    const transform = entity.getComponent('transform');
+    const movement = entity.getComponent('movement');
+    const behavior = entity.getComponent('behavior');
+    if (!combat || !transform || !movement || !behavior) return null;
+    return { entity, combat, transform, movement, behavior, dt: entity.game.deltaTime };
+  }
+
+  _exitToDecision({ behavior }) {
+    behavior.changeState(this.returnState ?? new DecisionState());
+  }
+
   getTarget() {
     if (!this.target) return null;
     const health = this.target.getComponent('health');
@@ -50,111 +216,75 @@ export class CombatState {
     this.target = combat ? combat.findNearbyEnemy() : null;
   }
 
-  update(entity) {
-    const game = entity.game;
-    const combat = entity.getComponent('combat');
-    const transform = entity.getComponent('transform');
-    const movement = entity.getComponent('movement');
-    const behavior = entity.getComponent('behavior');
-
-    if (!combat || !transform || !movement || !behavior) return;
-
-    // 回避中は他の行動を抑止
-    if (combat.isDodging()) return;
-
-    // 休憩中はその場に留まる。Combat側がHP再生と中断条件を管理する。
-    if (combat.isResting()) {
-      movement.stop();
-      return;
-    }
-
-    // 回避判定: 反応時間が満ちて回避クールダウンも明けていれば回避を起動
-    const dodgeFrom = combat.consumeDodgePlan();
-    if (dodgeFrom) {
-      const fromT = dodgeFrom.getComponent('transform');
-      if (fromT) {
-        // 攻撃者→自分の方向ベクトル (dx, dy) を求め、それに垂直な単位ベクトルを作る。
-        // 2D で (dx, dy) に垂直なのは (-dy, dx) と (dy, -dx) の2つ → どちらに避けるかは sign でランダムに選ぶ。
-        // 結果として「攻撃の軌道線に対して真横」へステップする向きが決まる。
-        const dx = transform.x - fromT.x;
-        const dy = transform.y - fromT.y;
-        const d = Math.sqrt(dx * dx + dy * dy) || 1;
-        const sign = Math.random() < 0.5 ? 1 : -1;
-        const perpX = -dy / d * sign;
-        const perpY = dx / d * sign;
-        if (combat.startDodge(perpX, perpY)) return;
-      }
-    }
-
-    // Periodically recheck for targets
-    this.checkTimer += game.deltaTime;
+  _tickRetarget({ entity, dt }) {
+    this.checkTimer += dt;
     if (this.checkTimer >= this.checkInterval) {
       this.checkTimer = 0;
       this.findTarget(entity);
     }
+  }
 
-    // No valid target - return to decision
-    const target = this.getTarget();
-    if (!target) {
-      behavior.changeState(this.returnState ?? new DecisionState());
-      return;
-    }
+  // ----------------------------------------------------------
+  // 個々の (条件 → 行動) ブロック
+  // ----------------------------------------------------------
 
-    // Target fled too far
-    const dist = game.spatialQuery.getDistance(entity, target);
-    if (this.isAllyTarget) {
-      // 自分のchaseRange内に入るまでは距離制限なしで追いかける。
-      // chaseRange内に入ったら isAllyTarget を解除して通常戦闘ロジックへシームレスに移行。
-      if (dist > combat.chaseRange) {
-        const targetTransform = target.getComponent('transform');
-        movement.moveTo(targetTransform.x, targetTransform.y);
-        return;
-      }
-      this.isAllyTarget = false;
-    }
+  // 反射的回避。回避すべきかは Combat.shouldDodge() が判定する。
+  // 方向（攻撃線に対して垂直 / 左右ランダム）は CombatState が決める。
+  _tryDodge({ combat, transform }) {
+    const dodgeFrom = combat.consumeDodgePlan();
+    if (!dodgeFrom) return false;
+    const fromT = dodgeFrom.getComponent('transform');
+    if (!fromT) return false;
+
+    // 攻撃者→自分の方向ベクトル (dx, dy) を求め、それに垂直な単位ベクトルを作る。
+    // 2D で (dx, dy) に垂直なのは (-dy, dx) と (dy, -dx) の2つ → どちらに避けるかは sign でランダムに選ぶ。
+    // 結果として「攻撃の軌道線に対して真横」へステップする向きが決まる。
+    const dx = transform.x - fromT.x;
+    const dy = transform.y - fromT.y;
+    const d = Math.sqrt(dx * dx + dy * dy) || 1;
+    const sign = Math.random() < 0.5 ? 1 : -1;
+    const perpX = -dy / d * sign;
+    const perpY = dx / d * sign;
+    return combat.startDodge(perpX, perpY);
+  }
+
+  // 攻撃中の味方（this.isAllyTarget）が遠くにいる場合は、距離制限を無視して追いかける。
+  // 自分のchaseRange内に入ったら通常戦闘ロジックへシームレスに移行（フラグ解除）。
+  _shouldChaseAlly({ entity, combat }, target) {
+    if (!this.isAllyTarget) return false;
+    const dist = entity.game.spatialQuery.getDistance(entity, target);
+    if (dist > combat.chaseRange) return true;
+    this.isAllyTarget = false;
+    return false;
+  }
+
+  // 攻撃側はchaseRangeを超えたら、防御側は相手のchaseRange × fleeStopMultiplier を超えたら終了。
+  _isTargetOutOfRange({ entity, combat }, target) {
+    const dist = entity.game.spatialQuery.getDistance(entity, target);
     const stopRange = combat.shouldSeekCombat
       ? combat.chaseRange
       : (target.getComponent('combat')?.chaseRange ?? combat.chaseRange) * combat.fleeStopMultiplier;
-    if (dist > stopRange) {
-      behavior.changeState(this.returnState ?? new DecisionState());
-      return;
-    }
+    return dist > stopRange;
+  }
 
-    const targetTransform = target.getComponent('transform');
-    if (!targetTransform) {
-      behavior.changeState(this.returnState ?? new DecisionState());
-      return;
-    }
+  // 様子見トリガー判定。攻撃クールダウン中の隙間を埋めるように、
+  // 「攻撃できない・割り込み不可な動作中でない」時に確率で発火する。
+  _shouldStartReposition(combat) {
+    if (combat.canAttack()) return false;
+    if (combat.isBusy() || combat.isDodging()) return false;
+    if (combat.isRepositioning()) return false;
+    return Math.random() < REPOSITION_RATE_PER_SEC * combat.entity.game.deltaTime;
+  }
 
-    // Calculate center-to-center distance
-    const centerDistance = game.spatialQuery.getDistance(entity, target);
+  // kite状態（this.kiting）の遷移。ヒステリシスで開始/解除を分けて反復を防ぐ。
+  _tickKite({ combat, dt }, centerDistance) {
+    if (this.kiteCooldown > 0) this.kiteCooldown -= dt;
 
-    if (!combat.shouldSeekCombat) {
-      const fleeDestination = this.getFleeDestination(entity, targetTransform);
-      movement.moveTo(fleeDestination.x, fleeDestination.y);
-      return;
-    }
-
-    // 様子見: トリガー（条件 → 起動）とアクション（状態 → 移動指示）を分離
-    if (this._shouldStartReposition(entity, combat)) {
-      combat.startReposition();
-    }
-    if (combat.isRepositioning()) {
-      movement.moveTo(combat.reposition.targetX, combat.reposition.targetY);
-      return;
-    }
-
-    const weaponRange = combat.getWeaponRange();
+    const wasKiting = this.kiting;
     const kiteRange = combat.getKiteRange();
     const kiteStopRange = combat.getKiteStopRange();
 
-    // kiteクールダウンは休憩中も進める。「休憩→即kite」を防ぐため。
-    if (this.kiteCooldown > 0) this.kiteCooldown -= game.deltaTime;
-
-    const wasKiting = this.kiting;
     if (kiteRange > 0 && this.kiteCooldown <= 0) {
-      // ヒステリシス: 離脱開始(kiteRange)と離脱解除(kiteStopRange)を分け、
-      // 境界付近で「離れる→止まる→近づかれる→離れる」の反復を防ぐ
       if (centerDistance < kiteRange) {
         if (!this.kiting) this.kiteIsLowHp = combat.isLowHp();
         this.kiting = true;
@@ -166,66 +296,61 @@ export class CombatState {
     }
 
     if (this.kiting) {
-      this.kiteTimer += game.deltaTime;
+      this.kiteTimer += dt;
       // 低HP kiteは継続時間の上限で強制終了。ここで止めないと永久に逃げ続けてしまう。
       if (this.kiteIsLowHp && this.kiteTimer >= MAX_KITE_DURATION) this.kiting = false;
     }
 
-    // 低HPで逃げ終わったら、その場で休憩してHPを取り戻す。
-    // kite終了と同時にクールダウン発動 → 休憩中もタイマーが進み、明けてから少し戦って次のkiteが解禁される。
-    if (wasKiting && !this.kiting) {
-      this.kiteTimer = 0;
-      this.kiteCooldown = KITE_COOLDOWN;
-      if (this.kiteIsLowHp) {
-        combat.startRest();
-        return;
-      }
-    }
+    this._kiteEndedThisTick = wasKiting && !this.kiting;
+  }
 
-    // 近すぎる場合は離れながら攻撃する
-    if (this.kiting) {
-      const dx = transform.x - targetTransform.x;
-      const dy = transform.y - targetTransform.y;
-      const d = Math.sqrt(dx * dx + dy * dy) || 1;
-      // 敵から離れる方向に毎フレーム新しい移動先を再計算するので、
-      // 「現在地から KITE_DISTANCE 先」に向かって連続的に後退し続ける。
-      // 値はピクセル相当。大きいほど一回の指示で長く下がるが、毎フレーム上書きされるので実効的には方向ベクトル。
-      const KITE_DISTANCE = 150;
-      movement.moveTo(
-        transform.x + (dx / d) * KITE_DISTANCE,
-        transform.y + (dy / d) * KITE_DISTANCE
-      );
-      if (centerDistance <= weaponRange && combat.canAttack()) {
-        combat.attack(target);
-      }
-      return;
-    }
+  _kiteJustEnded() {
+    return this._kiteEndedThisTick === true;
+  }
 
-    // Within weapon range - try to attack
-    if (centerDistance <= weaponRange) {
+  _kiteJustEndedAtLowHp() {
+    return this._kiteEndedThisTick === true && this.kiteIsLowHp;
+  }
+
+  // kite終了時の後始末（タイマーリセット、クールダウン開始）。
+  // 「終了」を検知する箇所と「後始末」する箇所を分けるため独立メソッドにしてある。
+  _consumeKiteEnd() {
+    this.kiteTimer = 0;
+    this.kiteCooldown = KITE_COOLDOWN;
+    this._kiteEndedThisTick = false;
+  }
+
+  // kite中: 敵から離れる方向に毎フレーム新しい移動先を再計算し、射程に入れば撃つ。
+  _kiteAndAttack({ combat, transform, movement }, target, centerDistance) {
+    const targetTransform = target.getComponent('transform');
+    const dx = transform.x - targetTransform.x;
+    const dy = transform.y - targetTransform.y;
+    const d = Math.sqrt(dx * dx + dy * dy) || 1;
+    movement.moveTo(
+      transform.x + (dx / d) * KITE_MOVE_DISTANCE,
+      transform.y + (dy / d) * KITE_MOVE_DISTANCE
+    );
+    if (centerDistance <= combat.getWeaponRange() && combat.canAttack()) {
+      combat.attack(target);
+    }
+  }
+
+  // 通常戦闘: 射程内なら止まって攻撃、外なら近づく。
+  _engageOrApproach({ combat, movement }, target, centerDistance) {
+    const targetTransform = target.getComponent('transform');
+    if (centerDistance <= combat.getWeaponRange()) {
       movement.stop();
-      if (combat.canAttack()) {
-        combat.attack(target);
-      }
+      if (combat.canAttack()) combat.attack(target);
     } else {
-      // Move closer to get within weapon range
       movement.moveTo(targetTransform.x, targetTransform.y);
     }
   }
 
-  // 様子見トリガー判定。攻撃クールダウン中の隙間を埋めるように、
-  // 「攻撃できない・割り込み不可な動作中でない」時に確率で発火する。
-  _shouldStartReposition(entity, combat) {
-    if (combat.canAttack()) return false;
-    if (combat.isBusy() || combat.isDodging()) return false;
-    if (combat.isRepositioning()) return false;
-    const REPOSITION_RATE_PER_SEC = 0.5;
-    return Math.random() < REPOSITION_RATE_PER_SEC * entity.game.deltaTime;
-  }
+  // ----------------------------------------------------------
+  // 防御的エンティティの逃走先
+  // ----------------------------------------------------------
 
   getFleeDestination(entity, targetTransform) {
-    const FLEE_DISTANCE = 200;
-    const ALLY_PROXIMITY_THRESHOLD = 1000;
     const transform = entity.getComponent('transform');
 
     const nearestAlly = this.findNearestAlly(entity);
@@ -272,20 +397,5 @@ export class CombatState {
       }
     }
     return nearest;
-  }
-
-  exit(entity) {
-    const movement = entity.getComponent('movement');
-    if (movement) {
-      movement.stop();
-      if (this.originalSpeed !== undefined) {
-        movement.speed = this.originalSpeed;
-        this.originalSpeed = undefined;
-      }
-    }
-    // Combatを抜けたら報復対象を忘れる。再度殴られれば takeDamage で再記録される。
-    const health = entity.getComponent('health');
-    if (health) health.lastAttacker = null;
-    this.target = null;
   }
 }
