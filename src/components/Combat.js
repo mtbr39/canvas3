@@ -9,17 +9,19 @@ import { RANGE_TIERS } from '../data/Items.js';
 // ============================================================
 
 // --- 移動・回避 ---
-// 逃走時に通常移動速度の何倍で動くか（防御的エンティティ用）
-const FLEE_SPEED_MULTIPLIER = 3;
 // 攻撃の予備動作を見てから回避を起動するまでの遅延 [秒]
 // この値より windup が短い武器は反応できずに被弾する → 軽量武器が回避困難になる根拠
 const REACTION_TIME = 0.25;
 // 連続回避を防ぐクールダウン [秒]。回避完了から次の回避が許可されるまで
 const DODGE_COOLDOWN = 2.0;
 // 1回の回避でずれる距離 [ピクセル相当]
-const DODGE_DISTANCE = 80;
-// 回避モーションの所要時間 [秒]。短いほどステップが速く、攻撃を避けやすい
+const DODGE_DISTANCE = 160;
+// 回避モーションの最大所要時間 [秒]。実際は目的地到達で早めに終わることが多い。
 const DODGE_DURATION = 0.5;
+// 回避中の最高速度 [px/秒]。DODGE_DISTANCE を短時間で踏破するため高めに。
+const DODGE_SPEED = 400;
+// 回避時の加速度 [px/秒^2]。SPEED_ACCEL より十分大きく、ダッシュ感を出す。
+const DODGE_ACCEL = 300;
 
 // --- 攻撃 ---
 // 武器の予備動作の長さ [秒]。武器側は 'fast'/'normal'/'slow' で指定し、実数はここで定義する。
@@ -53,6 +55,11 @@ const REST_REGEN_MULTIPLIER = 3.0;
 // 休憩中の最低保証 regen [HP/秒]。素のregenRateが0でも休憩中は回復させる
 const MIN_REST_REGEN = 5.0;
 
+// --- その場待機 ---
+// 回避明けなど「動作の硬直」として使う短い停止のデフォルト時間 [秒]。
+// rest と違い HP は回復しない。
+const WAIT_DURATION = 0.5;
+
 
 // ============================================================
 // Combat コンポーネント
@@ -67,11 +74,13 @@ const MIN_REST_REGEN = 5.0;
 // Combat が公開する条件メソッド群を組み合わせて行動が決まる。
 // ============================================================
 export class Combat {
-  constructor(shouldSeekCombat = false, detectionRange, chaseRange) {
+  constructor(shouldSeekCombat = false, detectionRange, chaseRange, runSpeedMultiplier = 1) {
     this.entity = null;
     this.shouldSeekCombat = shouldSeekCombat;
     this.cooldownTimer = 0;
-    this.fleeSpeedMultiplier = FLEE_SPEED_MULTIPLIER;
+    // 戦闘中に「走る」ときの通常移動速度に対する倍率。
+    // 逃走・接近・距離どり(kite)に適用される。様子見など緩い移動は1倍のまま。
+    this.runSpeedMultiplier = runSpeedMultiplier;
     this.fleeStopMultiplier = 1.5;
     this.detectionRange = detectionRange;
     this.chaseRange = chaseRange ?? detectionRange * 1.5;
@@ -82,14 +91,15 @@ export class Combat {
     this.dodge = null;
     this.reposition = null;
     this.rest = null;
+    this.wait = null;
   }
 
-  static createAggressive(detectionRange, chaseRange) {
-    return new Combat(true, detectionRange, chaseRange);
+  static createAggressive(detectionRange, chaseRange, runSpeedMultiplier) {
+    return new Combat(true, detectionRange, chaseRange, runSpeedMultiplier);
   }
 
-  static createDefensive(detectionRange, chaseRange) {
-    return new Combat(false, detectionRange, chaseRange);
+  static createDefensive(detectionRange, chaseRange, runSpeedMultiplier) {
+    return new Combat(false, detectionRange, chaseRange, runSpeedMultiplier);
   }
 
   // ----------------------------------------------------------
@@ -113,6 +123,10 @@ export class Combat {
 
   isResting() {
     return this.rest !== null;
+  }
+
+  isWaiting() {
+    return this.wait !== null;
   }
 
   // HPが低危険域に入っているか。kite起動条件と休憩遷移の両方で参照する。
@@ -288,9 +302,18 @@ export class Combat {
     return true;
   }
 
+  // その場待機: 一定時間その場に留まる。rest と違い HP は回復しない。
+  // 回避明けの硬直など、動作後の短い停止に使う。
+  startWait(duration = WAIT_DURATION) {
+    if (this.wait || this.isBusy() || this.isDodging() || this.isResting()) return false;
+    this.wait = { timer: 0, duration };
+    this.entity.getComponent('movement')?.stop();
+    return true;
+  }
+
   // 様子見: 現在地から半径 radius 内のランダムな点に移動。
   // 攻撃クールダウン中などに揺さぶりとして発火させる想定。
-  startReposition(radius = 120, duration = 1.5) {
+  startReposition(radius = 120, duration = 4.0) {
     if (this.reposition || this.isBusy() || this.isDodging()) return false;
     const transform = this.entity.getComponent('transform');
     if (!transform) return false;
@@ -312,20 +335,23 @@ export class Combat {
     if (this.dodge || this.dodgeCooldown > 0) return false;
     if (this.isBusy()) return false;
     const transform = this.entity.getComponent('transform');
-    if (!transform) return false;
+    const movement = this.entity.getComponent('movement');
+    if (!transform || !movement) return false;
 
     this.dodge = {
-      startX: transform.x,
-      startY: transform.y,
-      targetX: transform.x + dirX * DODGE_DISTANCE,
-      targetY: transform.y + dirY * DODGE_DISTANCE,
       timer: 0,
       duration: DODGE_DURATION,
     };
     this.dodgeCooldown = DODGE_COOLDOWN;
     transform.direction = Math.atan2(dirY, dirX);
 
-    this.entity.getComponent('movement')?.stop();
+    // Movement に高加速度で DODGE_SPEED を指示し、回避先へ moveTo。
+    // 位置補間は Movement.update に任せる。瞬間移動ではなく加速度のあるダッシュになる。
+    movement.setSpeed(DODGE_SPEED, DODGE_ACCEL);
+    movement.moveTo(
+      transform.x + dirX * DODGE_DISTANCE,
+      transform.y + dirY * DODGE_DISTANCE
+    );
     this.entity.getComponent('afterImage')?.trigger(DODGE_DURATION);
     return true;
   }
@@ -381,6 +407,7 @@ export class Combat {
     if (this.dodge) this._tickDodge(dt);
     if (this.reposition) this._tickReposition(dt);
     if (this.rest) this._tickRest(dt);
+    if (this.wait) this._tickWait(dt);
 
     this._tickPerception(dt);
   }
@@ -396,20 +423,31 @@ export class Combat {
   _tickDodge(dt) {
     const d = this.dodge;
     d.timer += dt;
-    const t = Math.min(d.timer / d.duration, 1);
-    const transform = this.entity.getComponent('transform');
-    if (transform) {
-      transform.x = d.startX + (d.targetX - d.startX) * t;
-      transform.y = d.startY + (d.targetY - d.startY) * t;
-    }
-    if (d.timer >= d.duration) {
+    const movement = this.entity.getComponent('movement');
+    // タイマー上限 or 目的地到達で終了。位置の進行は Movement に任せている。
+    if (d.timer >= d.duration || (movement && movement.hasArrived())) {
       this.dodge = null;
+      // 回避明けは「その場待機」か「様子見」のどちらかに入る。
+      // どちらも一瞬の硬直として機能し、被弾→即反撃の単調なループを崩す。
+      if (Math.random() < 0.5) {
+        this.startWait();
+      } else {
+        this.startReposition();
+      }
     }
   }
 
   _tickReposition(dt) {
     this.reposition.timer -= dt;
     if (this.reposition.timer <= 0) this.reposition = null;
+  }
+
+  _tickWait(dt) {
+    const w = this.wait;
+    w.timer += dt;
+    if (w.timer >= w.duration) {
+      this.wait = null;
+    }
   }
 
   _tickRest(dt) {

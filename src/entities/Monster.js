@@ -21,7 +21,8 @@ import { FieldBound } from '../components/FieldBound.js';
 const MONSTER_STATS = {
   normal: {
     health: 100,
-    speed: 120,
+    speed: 100,
+    runSpeedMultiplier: 1.6,
     radius: 15,
     attack: 'claw',
     detectionRange: 150,
@@ -31,6 +32,7 @@ const MONSTER_STATS = {
   boss: {
     health: 300,
     speed: 80,
+    runSpeedMultiplier: 1.4,
     radius: 40,
     attack: 'boss_claw',
     detectionRange: 250,

@@ -28,14 +28,19 @@ import { give } from '../components/ItemExchanger.js';
 import { colors } from '../data/Colors.js';
 
 const HUMAN_STATS = {
-  detectionRange: 200,
-  chaseRange: 1000,
+  default: {
+    health: 100,
+    speed: 50,
+    runSpeedMultiplier: 3,
+    radius: 25,
+    detectionRange: 200,
+    chaseRange: 1000,
+    regenRate: 2,
+  },
 };
 
 const INITIAL_COINS_MIN = 3;
 const INITIAL_COINS_MAX = 10;
-
-const HEALTH_REGEN_RATE = 2;
 
 // x, y を中心に size 人のパーティを生成してgameに追加する
 export function createHumanParty(game, x, y, size, options = {}) {
@@ -70,15 +75,17 @@ export function createHuman(x, y, { isAdventurer } = {}) {
   // 指定がなければ 50% adventurer, 50% villager
   if (isAdventurer === undefined) isAdventurer = Math.random() < 0.5;
 
-  const health = new Health(100, { regenRate: HEALTH_REGEN_RATE });
+  const stats = HUMAN_STATS.default;
+
+  const health = new Health(stats.health, { regenRate: stats.regenRate });
   health.removeOnDeath = false;
 
   entity
     .addComponent('transform', new Transform(x, y))
-    .addComponent('movement', new Movement(50))
+    .addComponent('movement', new Movement(stats.speed))
     .addComponent('behavior', new Behavior(new IdleState()))
     .addComponent('health', health)
-    .addComponent('collider', new Collider({ type: 'circle', radius: 25 }))
+    .addComponent('collider', new Collider({ type: 'circle', radius: stats.radius }))
     .addComponent('shapeRenderer', new ShapeRenderer({
       fill: colors.base01,
     }))
@@ -104,9 +111,9 @@ export function createHuman(x, y, { isAdventurer } = {}) {
 
     entity
       .addComponent('equipment', new Equipment(randomWeapon))
-      .addComponent('combat', Combat.createAggressive(HUMAN_STATS.detectionRange, HUMAN_STATS.chaseRange));
+      .addComponent('combat', Combat.createAggressive(stats.detectionRange, stats.chaseRange, stats.runSpeedMultiplier));
   } else {
-    entity.addComponent('combat', Combat.createDefensive(HUMAN_STATS.detectionRange, HUMAN_STATS.chaseRange));
+    entity.addComponent('combat', Combat.createDefensive(stats.detectionRange, stats.chaseRange, stats.runSpeedMultiplier));
   }
 
   behavior.addInterruptCheck(createInterruptCheck());

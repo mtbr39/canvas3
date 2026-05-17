@@ -56,10 +56,10 @@ export class CombatState {
     if (!this.target) this.findTarget(entity);
     entity.getComponent('party')?.clearDestination();
     const movement = entity.getComponent('movement');
-    const combat = entity.getComponent('combat');
-    if (movement && combat && !combat.shouldSeekCombat) {
-      this.originalSpeed = movement.speed;
-      movement.speed = movement.speed * combat.fleeSpeedMultiplier;
+    if (movement) {
+      // maxSpeed を保存（現在の eased speed ではなく「本来の速度」）。
+      // 戦闘中は setSpeed で run/walk を切り替えるので、抜けるときに元に戻す。
+      this.baseSpeed = movement.maxSpeed;
     }
     movement?.stop();
   }
@@ -68,9 +68,9 @@ export class CombatState {
     const movement = entity.getComponent('movement');
     if (movement) {
       movement.stop();
-      if (this.originalSpeed !== undefined) {
-        movement.speed = this.originalSpeed;
-        this.originalSpeed = undefined;
+      if (this.baseSpeed !== undefined) {
+        movement.setSpeed(this.baseSpeed);
+        this.baseSpeed = undefined;
       }
     }
     // Combatを抜けたら報復対象を忘れる。再度殴られれば takeDamage で再記録される。
@@ -106,6 +106,7 @@ export class CombatState {
     // --- 割り込み不可: 現在の動作を最後までやらせる ---
     if (combat.isDodging()) return;
     if (combat.isResting()) { movement.stop(); return; }
+    if (combat.isWaiting()) { movement.stop(); return; }
 
     // --- 反射的回避: 自分への攻撃のwindupを察知したら横にステップ ---
     if (this._tryDodge(ctx)) return;
@@ -119,6 +120,7 @@ export class CombatState {
     if (!targetTransform) return this._exitToDecision(ctx);
 
     if (this._shouldChaseAlly(ctx, target)) {
+      this._setRunSpeed(ctx);
       movement.moveTo(targetTransform.x, targetTransform.y);
       return;
     }
@@ -126,6 +128,7 @@ export class CombatState {
 
     // --- 防御的エンティティ: 戦わずに逃げる ---
     if (!combat.shouldSeekCombat) {
+      this._setRunSpeed(ctx);
       const flee = this.getFleeDestination(entity, targetTransform);
       movement.moveTo(flee.x, flee.y);
       return;
@@ -134,6 +137,7 @@ export class CombatState {
     // --- 様子見: 攻撃クールダウン中の隙間を揺さぶりで埋める ---
     if (this._shouldStartReposition(combat)) combat.startReposition();
     if (combat.isRepositioning()) {
+      this._setWalkSpeed(ctx);
       movement.moveTo(combat.reposition.targetX, combat.reposition.targetY);
       return;
     }
@@ -168,6 +172,7 @@ export class CombatState {
   _currentActionLabel(entity, combat) {
     if (combat.isResting()) return '休憩';
     if (combat.isDodging()) return '回避';
+    if (combat.isWaiting()) return 'その場待機';
     if (combat.windup) return combat.windup.weapon.name;
     if (combat.isRepositioning()) return '様子見';
     if (this.kiting) return '距離取り';
@@ -321,11 +326,13 @@ export class CombatState {
   }
 
   // kite中: 敵から離れる方向に毎フレーム新しい移動先を再計算し、射程に入れば撃つ。
-  _kiteAndAttack({ combat, transform, movement }, target, centerDistance) {
+  _kiteAndAttack(ctx, target, centerDistance) {
+    const { combat, transform, movement } = ctx;
     const targetTransform = target.getComponent('transform');
     const dx = transform.x - targetTransform.x;
     const dy = transform.y - targetTransform.y;
     const d = Math.sqrt(dx * dx + dy * dy) || 1;
+    this._setRunSpeed(ctx);
     movement.moveTo(
       transform.x + (dx / d) * KITE_MOVE_DISTANCE,
       transform.y + (dy / d) * KITE_MOVE_DISTANCE
@@ -336,14 +343,29 @@ export class CombatState {
   }
 
   // 通常戦闘: 射程内なら止まって攻撃、外なら近づく。
-  _engageOrApproach({ combat, movement }, target, centerDistance) {
+  _engageOrApproach(ctx, target, centerDistance) {
+    const { combat, movement } = ctx;
     const targetTransform = target.getComponent('transform');
     if (centerDistance <= combat.getWeaponRange()) {
       movement.stop();
       if (combat.canAttack()) combat.attack(target);
     } else {
+      this._setRunSpeed(ctx);
       movement.moveTo(targetTransform.x, targetTransform.y);
     }
+  }
+
+  // 走る: 逃走・接近・距離どりで使う。baseSpeed に走る倍率を掛けた値を目標速度にセット。
+  // 実際の速度は Movement 側で滑らかに追従する。
+  _setRunSpeed({ combat, movement }) {
+    if (this.baseSpeed === undefined) return;
+    movement.setSpeed(this.baseSpeed * combat.runSpeedMultiplier);
+  }
+
+  // 歩く: 様子見など、戦闘中でも緩い移動で使う。baseSpeed そのまま。
+  _setWalkSpeed({ movement }) {
+    if (this.baseSpeed === undefined) return;
+    movement.setSpeed(this.baseSpeed);
   }
 
   // ----------------------------------------------------------
