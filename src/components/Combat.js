@@ -1,4 +1,5 @@
 import { createAttackHitbox } from '../entities/AttackHitbox.js';
+import { createSlashEffect } from '../entities/SlashEffect.js';
 import { RANGE_TIERS } from '../data/Items.js';
 
 // ============================================================
@@ -165,11 +166,11 @@ export class Combat {
   // ----------------------------------------------------------
 
   // 近接武器のヒットボックス中心までの距離。
-  // 自分の collider 円と武器の hitbox 円が外接するように置く（自分のサイズ + 武器の半径）。
+  // 自分の collider 円の外側に「自分の半径分」の空白を空けてから武器の hitbox 円を置く。
   getMeleeHitboxDistance(weapon) {
     const collider = this.entity.getComponent('collider');
     const ownRadius = collider?.shape?.type === 'circle' ? collider.shape.radius : 0;
-    return ownRadius + weapon.hitbox.radius;
+    return ownRadius * 2 + weapon.hitbox.radius;
   }
 
   getWeaponRange() {
@@ -526,7 +527,12 @@ export class Combat {
       null,
       this._buildHostileHitFilter()
     );
+
+    hitbox.removeComponent('shapeRenderer');
     game.addEntity(hitbox);
+
+    const slash = createSlashEffect(transform.x, transform.y, dirX, dirY, dist);
+    game.addEntity(slash);
   }
 
   performRangedAttack(transform, dirX, dirY, weapon) {
