@@ -8,6 +8,15 @@ export const RANGE_TIERS = {
   'long': 800
 };
 
+// 武器の予備動作の長さ [秒]。武器側は 'fast'/'normal'/'slow' で指定し、実数はここで定義する。
+export const WINDUP_BY_SPEED = {
+  very_fast: 0.1,
+  fast: 0.5,
+  normal: 1.0,
+  slow: 1.5,
+};
+export const DEFAULT_WINDUP_SPEED = 'normal';
+
 export const ITEMS = {
   // === 人間用武器 ===
   sword: {
@@ -16,10 +25,11 @@ export const ITEMS = {
     attackType: 'melee',
     damage: 15,
     cooldown: 1.0,
-    windupSpeed: 'fast',
+    windupSpeed: 'very_fast',
     hitbox: {
       radius: 35,
-      duration: 0.2
+      duration: 0.2,
+      visual: 'slash'
     },
     dropVisual: {
       shape: 'rect',
@@ -33,10 +43,11 @@ export const ITEMS = {
     attackType: 'melee',
     damage: 25,
     cooldown: 1.5,
-    windupSpeed: 'slow',
+    windupSpeed: 'very_fast',
     hitbox: {
       radius: 40,
-      duration: 0.3
+      duration: 0.3,
+      visual: 'slash'
     },
     dropVisual: {
       shape: 'rect',
@@ -86,7 +97,7 @@ export const ITEMS = {
     attackType: 'melee',
     damage: 5,
     cooldown: 1.0,
-    windupSpeed: 'fast',
+    windupSpeed: 'very_fast',
     hitbox: {
       radius: 20,
       duration: 0.15

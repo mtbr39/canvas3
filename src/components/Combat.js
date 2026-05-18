@@ -1,6 +1,9 @@
 import { createAttackHitbox } from '../entities/AttackHitbox.js';
 import { createSlashEffect } from '../entities/SlashEffect.js';
-import { RANGE_TIERS } from '../data/Items.js';
+import { RANGE_TIERS, WINDUP_BY_SPEED, DEFAULT_WINDUP_SPEED } from '../data/Items.js';
+
+// デバッグ用: true にすると、slash エフェクト武器でもヒットボックスの円を表示する。
+const DEBUG_SHOW_HITBOX_CIRCLE = false;
 
 // ============================================================
 // 定数: 戦闘の「身体性能」に関するもの。
@@ -25,14 +28,8 @@ const DODGE_SPEED = 400;
 const DODGE_ACCEL = 300;
 
 // --- 攻撃 ---
-// 武器の予備動作の長さ [秒]。武器側は 'fast'/'normal'/'slow' で指定し、実数はここで定義する。
+// 武器の予備動作の長さ [秒] は Items.js の WINDUP_BY_SPEED で定義。
 // fast は REACTION_TIME(0.25) を下回るので回避困難 → 軽量武器の利点
-const WINDUP_BY_SPEED = {
-  fast: 0.5,
-  normal: 1.0,
-  slow: 1.5,
-};
-const DEFAULT_WINDUP_SPEED = 'normal';
 
 // --- HP判定 ---
 // 体力がこの比率を下回ったら低HP扱い（kite起動条件・休憩遷移で参照）
@@ -528,11 +525,16 @@ export class Combat {
       this._buildHostileHitFilter()
     );
 
-    hitbox.removeComponent('shapeRenderer');
+    const useSlash = weapon.hitbox.visual === 'slash';
+    if (useSlash && !DEBUG_SHOW_HITBOX_CIRCLE) {
+      hitbox.removeComponent('shapeRenderer');
+    }
     game.addEntity(hitbox);
 
-    const slash = createSlashEffect(transform.x, transform.y, dirX, dirY, dist);
-    game.addEntity(slash);
+    if (useSlash) {
+      const slash = createSlashEffect(transform.x, transform.y, dirX, dirY, dist);
+      game.addEntity(slash);
+    }
   }
 
   performRangedAttack(transform, dirX, dirY, weapon) {
