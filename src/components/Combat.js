@@ -19,9 +19,9 @@ const REACTION_TIME = 0.25;
 // 連続回避を防ぐクールダウン [秒]。回避完了から次の回避が許可されるまで
 const DODGE_COOLDOWN = 2.0;
 // 1回の回避でずれる距離 [ピクセル相当]
-const DODGE_DISTANCE = 160;
+const DODGE_DISTANCE = 200;
 // 回避モーションの最大所要時間 [秒]。実際は目的地到達で早めに終わることが多い。
-const DODGE_DURATION = 0.5;
+const DODGE_DURATION = 1.0;
 // 回避中の最高速度 [px/秒]。DODGE_DISTANCE を短時間で踏破するため高めに。
 const DODGE_SPEED = 400;
 // 回避時の加速度 [px/秒^2]。SPEED_ACCEL より十分大きく、ダッシュ感を出す。
@@ -425,13 +425,8 @@ export class Combat {
     // タイマー上限 or 目的地到達で終了。位置の進行は Movement に任せている。
     if (d.timer >= d.duration || (movement && movement.hasArrived())) {
       this.dodge = null;
-      // 回避明けは「その場待機」か「様子見」のどちらかに入る。
-      // どちらも一瞬の硬直として機能し、被弾→即反撃の単調なループを崩す。
-      if (Math.random() < 0.5) {
-        this.startWait();
-      } else {
-        this.startReposition();
-      }
+      // 回避明けは「その場待機」で一瞬の硬直を入れ、被弾→即反撃の単調なループを崩す。
+      this.startWait();
     }
   }
 

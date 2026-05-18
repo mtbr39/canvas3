@@ -1,8 +1,8 @@
 import { colors } from '../data/Colors.js';
 import { getStateLabel } from '../core/StateLabel.js';
 
-const SHOW_PARTY_LINES = true;
-const SHOW_QUEST_TARGET_LINE = true;
+const SHOW_PARTY_LINES = false;
+const SHOW_QUEST_TARGET_LINE = false;
 
 export class InfoRenderer {
   constructor() {

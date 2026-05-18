@@ -2,6 +2,9 @@
 // setSpeed で目標速度を変えると、ここで決まる加速度で滑らかに追従する。
 // 呼び出し側で第2引数に大きな値を渡せば「ほぼ瞬時に到達」も可能。
 const SPEED_ACCEL = 100;
+// 停止時の滑走距離 [px]。停止開始時の速度に応じて減速度を決めるための係数。
+// 速度に関わらずこの距離だけ滑って止まるよう、減速度 = speed^2 / (2 * SLIDE_DISTANCE) となる。
+const SLIDE_DISTANCE = 20;
 
 export class Movement {
   constructor(speed = 100) {
@@ -12,6 +15,7 @@ export class Movement {
     this.maxSpeed = speed;
     this.speed = 0;
     this.accel = SPEED_ACCEL;
+    this.stopDecel = 0;
     this.targetX = null;
     this.targetY = null;
     this.moving = false;
@@ -34,7 +38,14 @@ export class Movement {
   stop() {
     this.targetX = null;
     this.targetY = null;
-    this.moving = false;
+    // 停止に切り替わった瞬間だけ減速度を確定する。
+    // 毎フレーム stop() が呼ばれても、減衰中の速度で再計算して減速が緩んでいかないようにする。
+    if (this.moving) {
+      this.stopDecel = this.speed > 0
+        ? (this.speed * this.speed) / (2 * SLIDE_DISTANCE)
+        : 0;
+      this.moving = false;
+    }
   }
 
   hasArrived() {
@@ -47,26 +58,31 @@ export class Movement {
 
     this._tickSpeed(dt);
 
-    if (!this.moving) return;
-
     const transform = this.entity.getComponent('transform');
     if (!transform) return;
 
-    const dx = this.targetX - transform.x;
-    const dy = this.targetY - transform.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    const step = this.speed * dt;
+    if (this.moving) {
+      const dx = this.targetX - transform.x;
+      const dy = this.targetY - transform.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const step = this.speed * dt;
 
-    if (dist <= step) {
-      transform.x = this.targetX;
-      transform.y = this.targetY;
-      this.stop();
-      return;
+      if (dist <= step) {
+        transform.x = this.targetX;
+        transform.y = this.targetY;
+        this.stop();
+        return;
+      }
+
+      transform.direction = Math.atan2(dy, dx);
+      transform.x += (dx / dist) * step;
+      transform.y += (dy / dist) * step;
+    } else if (this.speed > 0) {
+      // 停止指示後も、speed が 0 に減衰しきるまで最後の向きへ滑走する。
+      const step = this.speed * dt;
+      transform.x += Math.cos(transform.direction) * step;
+      transform.y += Math.sin(transform.direction) * step;
     }
-
-    transform.direction = Math.atan2(dy, dx);
-    transform.x += (dx / dist) * step;
-    transform.y += (dy / dist) * step;
   }
 
   _tickSpeed(dt) {
@@ -76,7 +92,8 @@ export class Movement {
       return;
     }
     const diff = target - this.speed;
-    const maxStep = this.accel * dt;
+    const rate = this.moving ? this.accel : this.stopDecel;
+    const maxStep = rate * dt;
     if (Math.abs(diff) <= maxStep) {
       this.speed = target;
       this.accel = SPEED_ACCEL;

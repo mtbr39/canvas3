@@ -18,6 +18,10 @@ const KITE_COOLDOWN = 12.0;
 // 様子見の発火確率 [回/秒]。攻撃クールダウン中の隙間を埋めるための揺さぶり。
 const REPOSITION_RATE_PER_SEC = 0.5;
 
+// ランダム回避の発火確率 [回/秒]。予備動作の察知とは無関係に、戦闘中に稀に発火する。
+// 起動可否（クールダウンや割り込み）は Combat.startDodge 側で守られる。
+const RANDOM_DODGE_RATE_PER_SEC = 0.1;
+
 // kite中、毎フレーム指示する「敵から離れる方向の到達先距離」 [ピクセル相当]。
 // 毎フレーム上書きするので、実効的には方向ベクトルの大きさ。
 const KITE_MOVE_DISTANCE = 150;
@@ -134,6 +138,9 @@ export class CombatState {
       return;
     }
 
+    // --- ランダム回避: 予備動作がなくても揺さぶりとして稀に発火 ---
+    if (this._tryRandomDodge(ctx, target)) return;
+
     // --- 様子見: 攻撃クールダウン中の隙間を揺さぶりで埋める ---
     if (this._shouldStartReposition(combat)) combat.startReposition();
     if (combat.isRepositioning()) {
@@ -246,6 +253,24 @@ export class CombatState {
     // 結果として「攻撃の軌道線に対して真横」へステップする向きが決まる。
     const dx = transform.x - fromT.x;
     const dy = transform.y - fromT.y;
+    const d = Math.sqrt(dx * dx + dy * dy) || 1;
+    const sign = Math.random() < 0.5 ? 1 : -1;
+    const perpX = -dy / d * sign;
+    const perpY = dx / d * sign;
+    return combat.startDodge(perpX, perpY);
+  }
+
+  // ランダム回避。予備動作の察知とは独立に、戦闘中の揺さぶりとして稀に発火する。
+  // 方向は対象に対して垂直（左右ランダム）。startDodge 内のクールダウン/割り込みチェックに任せる。
+  _tryRandomDodge({ combat, transform }, target) {
+    if (combat.isBusy() || combat.isDodging()) return false;
+    if (combat.dodgeCooldown > 0) return false;
+    if (Math.random() >= RANDOM_DODGE_RATE_PER_SEC * combat.entity.game.deltaTime) return false;
+
+    const targetT = target.getComponent('transform');
+    if (!targetT) return false;
+    const dx = transform.x - targetT.x;
+    const dy = transform.y - targetT.y;
     const d = Math.sqrt(dx * dx + dy * dy) || 1;
     const sign = Math.random() < 0.5 ? 1 : -1;
     const perpX = -dy / d * sign;
