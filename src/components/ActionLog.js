@@ -1,21 +1,10 @@
-// 行動ログ: エンティティの直近の行動ラベルを一定時間ずつ表示する。
-// 新しい行動ラベルが追加されると、前のラベルの「上に」積み上がっていく（古いほど上、新しいほど下）。
-// 各ラベルは LABEL_DURATION 経過で消える。状態がめまぐるしく切り替わる瞬間も、
-// 履歴として残るので「いまどの行動を踏んでいるか」が目で追える。
+// 行動ログ: エンティティの直近の行動ラベルを履歴として保持する。
+// データは EntityInfoPanel から参照される（ワールド上には描画しない）。
 
-// ====== 表示パラメータ ======
-// 1つのラベルを表示し続ける時間 [秒]
+// 1つのラベルを保持し続ける時間 [秒]
 const LABEL_DURATION = 1.5;
-// 消える直前にフェードアウトする時間 [秒]（この秒数を切ったら徐々に透明になる）
-const FADE_DURATION = 0.4;
-// 同時に表示するラベルの上限。超えたら一番古いものから消える
+// 同時に保持するラベルの上限。超えたら一番古いものから消える
 const MAX_STACK = 6;
-// 行間 [ピクセル相当]
-const LINE_HEIGHT = 13;
-// フォントサイズ
-const FONT_SIZE = 11;
-// エンティティ外周からラベル群の一番下までの距離 [ピクセル相当]
-const VERTICAL_OFFSET = 22;
 
 export class ActionLog {
   constructor() {
@@ -46,30 +35,6 @@ export class ActionLog {
     this.entries = this.entries.filter((e) => e.timer > 0);
   }
 
-  render() {
-    if (this.entries.length === 0) return;
-    const transform = this.entity.getComponent('transform');
-    if (!transform) return;
-
-    const game = this.entity.game;
-
-    const collider = this.entity.getComponent('collider');
-    const radius = collider?.shape?.type === 'circle' ? collider.shape.radius : 0;
-    // baseY = 一番新しいラベルが描かれる y 座標（エンティティの真上）
-    const baseY = transform.y - radius - VERTICAL_OFFSET;
-
-    const n = this.entries.length;
-    for (let i = 0; i < n; i++) {
-      const entry = this.entries[i];
-      // i=0 が古い → 上 (画面では小さい y)、i=n-1 が新しい → 下 (baseY)
-      const stackFromBottom = n - 1 - i;
-      const y = baseY - stackFromBottom * LINE_HEIGHT;
-
-      const alpha = Math.min(1, entry.timer / FADE_DURATION);
-      game.graphics.text(transform.x, y, entry.label, {
-        fill: `rgba(0, 0, 0, ${alpha})`,
-        fontSize: FONT_SIZE,
-      });
-    }
-  }
+  // ワールド上の文字描画はしない（情報は EntityInfoPanel に集約）。
+  // entries は引き続き push/update で保守され、パネルから参照される。
 }

@@ -24,8 +24,8 @@ function assert(condition, message) {
   }
 }
 
-// --- テスト1: findHumanAt がクリック半径内の human を返す ---
-console.log('\n[Test 1] findHumanAt: 半径内にいる human を返す');
+// --- テスト1: findEntityAt がクリック半径内の human を返す ---
+console.log('\n[Test 1] findEntityAt: 半径内にいる human を返す');
 {
   const game = createGame();
   const human = createHuman(100, 100);
@@ -34,13 +34,13 @@ console.log('\n[Test 1] findHumanAt: 半径内にいる human を返す');
   const panel = new EntityInfoPanel();
   game.register('entityInfoPanel', panel);
 
-  const found = panel.findHumanAt(100, 100);
+  const found = panel.findEntityAt(100, 100);
   assert(found === human, 'クリック中心に human がいる → 見つかる');
 
-  const foundNear = panel.findHumanAt(130, 100);
+  const foundNear = panel.findEntityAt(130, 100);
   assert(foundNear === human, '30px離れていても半径内なら見つかる');
 
-  const notFound = panel.findHumanAt(200, 100);
+  const notFound = panel.findEntityAt(200, 100);
   assert(notFound === null, '遠い場所 → null');
 }
 
